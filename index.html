@@ -193,10 +193,11 @@
           <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
             <div>
               <h2 style="font-size:18px; font-weight:800;">Data Induk Pegawai RSUD Nene Mallomo</h2>
-              <p style="font-size:12px; color:var(--text-secondary);" id="dir-subtitle">Menampilkan seluruh SDM terdata (PNS, PPPK, Non-ASN)</p>
+              <p style="font-size:12px; color:var(--text-secondary);" id="dir-subtitle">Menampilkan seluruh SDM terdata (PNS, PPPK, P3K PW, Non-ASN)</p>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <button class="btn-secondary" onclick="exportEmployeesToCsv()"><i class="ri-download-2-line"></i> Ekspor Excel</button>
+              <button class="btn-secondary superadmin-only" style="color:#ef4444; border-color:#fecaca; background:#fef2f2;" onclick="handleDeleteAllEmployees()"><i class="ri-delete-bin-2-line"></i> Hapus Seluruh Pegawai</button>
               <button class="btn-primary admin-only" onclick="openAddEmployeeModal()"><i class="ri-user-add-line"></i> + Tambah Pegawai</button>
             </div>
           </div>
@@ -206,6 +207,7 @@
               <option value="SEMUA">Status: Semua</option>
               <option value="PNS">Status: PNS</option>
               <option value="PPPK">Status: PPPK</option>
+              <option value="P3K PW">Status: P3K PW</option>
               <option value="Non-ASN">Status: Non-ASN</option>
             </select>
             <select id="filter-kredensial" class="workspace-select" style="width:auto; min-width:165px;" onchange="applyDirectoryFilters()">
@@ -339,7 +341,7 @@
       <section id="view-arsip" class="view-section" style="display: none;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
           <div>
-            <h2 style="font-size:18px; font-weight:800;">Arsip Digital Akreditasi (KARS / STARKES)</h2>
+            <h2 style="font-size:18px; font-weight:800;">Arsip Digital Akreditasi (LAFKI / STARKES)</h2>
             <p style="font-size:12px; color:var(--text-secondary);">Repositori dokumen kredensial &amp; kepegawaian terproteksi di Google Drive Privat</p>
           </div>
           <div style="display:flex; gap:8px;">
@@ -349,7 +351,7 @@
 
         <div class="kpi-trio-grid">
           <div class="kpi-mini-card">
-            <div class="k-top"><span>Kelengkapan Berkas KARS</span><i class="ri-checkbox-circle-line" style="color:var(--accent-emerald);"></i></div>
+            <div class="k-top"><span>Kelengkapan Berkas LAFKI</span><i class="ri-checkbox-circle-line" style="color:var(--accent-emerald);"></i></div>
             <div class="k-val">98.2%</div>
             <div class="k-sub">Standar Akreditasi RSUD</div>
           </div>
@@ -532,7 +534,7 @@
         <!-- Tab 2 -->
         <div class="form-tab-content" data-pane="2" style="display:none;">
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
-            <div class="input-group"><label>Status Kepegawaian</label><select id="form-status-asn" class="form-control"><option value="PNS">PNS</option><option value="PPPK">PPPK</option><option value="Non-ASN">Non-ASN</option></select></div>
+            <div class="input-group"><label>Status Kepegawaian</label><select id="form-status-asn" class="form-control"><option value="PNS">PNS</option><option value="PPPK">PPPK</option><option value="P3K PW">P3K PW</option><option value="Non-ASN">Non-ASN</option></select></div>
             <div class="input-group"><label>Status Aktif</label><select id="form-status-aktif" class="form-control"><option value="Aktif">Aktif</option><option value="Tubel">Tugas Belajar</option><option value="Cuti">Cuti</option><option value="Pensiun">Pensiun</option></select></div>
             <div class="input-group"><label>Jenis Jabatan</label><select id="form-jenis-jabatan" class="form-control"><option value="Fungsional Tertentu Nakes">Fungsional Tertentu Nakes</option><option value="Struktural">Struktural</option><option value="Pelaksana">Pelaksana / Administrasi</option></select></div>
             <div class="input-group"><label>Nama Jabatan</label><input type="text" id="form-jabatan" class="form-control" placeholder="Dokter Ahli Madya / Perawat"></div>
@@ -574,8 +576,65 @@
         </div>
         <!-- Tab 7 -->
         <div class="form-tab-content" data-pane="7" style="display:none;">
-          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">Setelah menyimpan data pegawai, gunakan tombol <strong>Unggah Kredensial / Berkas PDF</strong> untuk menyimpan ijazah, SK, STR, dan SIP langsung ke Google Drive Privat RSUD.</p>
-          <button type="button" class="btn-secondary" onclick="closeEmployeeFormModal(); openUploadCredentialModal();"><i class="ri-upload-cloud-2-line"></i> Buka Modal Unggah Berkas PDF</button>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Unggah dokumen kepegawaian format <strong>PDF (Maks 5 MB)</strong> langsung ke Google Drive Privat RSUD. Pastikan NIP di Tab 1 sudah terisi.</p>
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px;">
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">1. SK CPNS (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-sk_cpns" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('SK CPNS', 'tab7-file-sk_cpns')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">2. SK PNS (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-sk_pns" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('SK PNS', 'tab7-file-sk_pns')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">3. SK Pangkat/Gol Terakhir (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-sk_pangkat" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('SK Pangkat/Gol Terakhir', 'tab7-file-sk_pangkat')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">4. SK Jabatan Terakhir (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-sk_jabatan" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('SK Jabatan Terakhir', 'tab7-file-sk_jabatan')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">5. SK Berkala Terakhir (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-sk_berkala" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('SK Berkala Terakhir', 'tab7-file-sk_berkala')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">6. Ijazah Terakhir (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-ijazah" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('Ijazah Terakhir', 'tab7-file-ijazah')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">7. Sertifikat Pelatihan (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-sertifikat" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('Sertifikat Pelatihan', 'tab7-file-sertifikat')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+            <div class="input-group" style="margin-bottom:0; padding:10px; border:1px solid var(--card-border-subtle); border-radius:12px; background:var(--bg-card-subtle);">
+              <label style="font-size:11.5px;">8. Kredensial (PDF)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="file" id="tab7-file-kredensial" accept="application/pdf" class="form-control" style="height:36px; padding:5px 8px; font-size:11px;">
+                <button type="button" class="btn-secondary" style="padding:6px 10px; font-size:11px; white-space:nowrap;" onclick="uploadTab7Doc('Kredensial', 'tab7-file-kredensial')"><i class="ri-upload-2-line"></i> Unggah</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px dashed var(--card-border-subtle);">
@@ -632,13 +691,32 @@
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
-          <span style="font-size:11px; color:var(--text-secondary);"><i class="ri-shield-check-line" style="color:var(--accent-emerald);"></i> Terintegrasi Standar KARS/STARKES</span>
+          <span style="font-size:11px; color:var(--text-secondary);"><i class="ri-shield-check-line" style="color:var(--accent-emerald);"></i> Terintegrasi Standar LAFKI/STARKES</span>
           <div style="display:flex; gap:8px;">
             <button type="button" class="btn-secondary" onclick="closeUploadCredentialModal()">Batal</button>
             <button type="submit" class="btn-primary"><i class="ri-verified-badge-line"></i> Simpan &amp; Verifikasi Berkas</button>
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4: PRATINJAU & UNDUH DOKUMEN PDF (ARSIP AKREDITASI)
+       ========================================================================== -->
+  <div id="pdf-preview-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 900px; width: 95%;">
+      <button class="modal-close-btn" onclick="closePdfPreviewModal()"><i class="ri-close-line"></i></button>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding-right:36px; margin-bottom:14px; flex-wrap:wrap;">
+        <div>
+          <h3 id="pdf-preview-title" style="font-size:16px; font-weight:800;">Pratinjau Dokumen PDF</h3>
+          <p style="font-size:11.5px; color:var(--text-secondary);">Dokumen terproteksi Google Drive Privat RSUD Nene Mallomo</p>
+        </div>
+        <button type="button" class="btn-primary" id="pdf-preview-download-btn"><i class="ri-download-2-line"></i> Unduh PDF</button>
+      </div>
+      <div style="width:100%; height:70vh; border-radius:14px; overflow:hidden; border:1px solid var(--card-border-subtle); background:#f1f5f9;">
+        <iframe id="pdf-preview-frame" style="width:100%; height:100%; border:none;" title="Pratinjau PDF"></iframe>
+      </div>
     </div>
   </div>
 

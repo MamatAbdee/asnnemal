@@ -143,10 +143,10 @@ const MockDB = {
     }
   ],
   archives: [
-    { ID_Dokumen: 'KARS-0942', NIP: '198204152008011005', Nama_Pemilik: 'dr. Budi Santoso, Sp.PD', Kategori_Dokumen: 'STR', Nama_Berkas: 'STR_198204152008011005_drBudi.pdf', Tanggal_Unggah: '2026-11-18' },
-    { ID_Dokumen: 'KARS-0941', NIP: '198204152008011005', Nama_Pemilik: 'dr. Budi Santoso, Sp.PD', Kategori_Dokumen: 'SK', Nama_Berkas: 'SK_Pangkat_IVa_drBudi.pdf', Tanggal_Unggah: '2026-11-15' },
-    { ID_Dokumen: 'KARS-0938', NIP: '199108152014022001', Nama_Pemilik: 'Ns. Ratna Dewi, S.Kep', Kategori_Dokumen: 'Ijazah', Nama_Berkas: 'Ijazah_Profesi_NsRatna.pdf', Tanggal_Unggah: '2026-11-12' },
-    { ID_Dokumen: 'KARS-0935', NIP: '198903222015032004', Nama_Pemilik: 'Bidan Maya Sari, A.Md.Keb', Kategori_Dokumen: 'RKK', Nama_Berkas: 'RKK_SPK_BidanMaya.pdf', Tanggal_Unggah: '2026-11-10' }
+    { ID_Dokumen: 'LAFKI-0942', NIP: '198204152008011005', Nama_Pemilik: 'dr. Budi Santoso, Sp.PD', Kategori_Dokumen: 'STR', Nama_Berkas: 'STR_198204152008011005_drBudi.pdf', Tanggal_Unggah: '2026-11-18' },
+    { ID_Dokumen: 'LAFKI-0941', NIP: '198204152008011005', Nama_Pemilik: 'dr. Budi Santoso, Sp.PD', Kategori_Dokumen: 'SK', Nama_Berkas: 'SK_Pangkat_IVa_drBudi.pdf', Tanggal_Unggah: '2026-11-15' },
+    { ID_Dokumen: 'LAFKI-0938', NIP: '199108152014022001', Nama_Pemilik: 'Ns. Ratna Dewi, S.Kep', Kategori_Dokumen: 'Ijazah', Nama_Berkas: 'Ijazah_Profesi_NsRatna.pdf', Tanggal_Unggah: '2026-11-12' },
+    { ID_Dokumen: 'LAFKI-0935', NIP: '198903222015032004', Nama_Pemilik: 'Bidan Maya Sari, A.Md.Keb', Kategori_Dokumen: 'RKK', Nama_Berkas: 'RKK_SPK_BidanMaya.pdf', Tanggal_Unggah: '2026-11-10' }
   ]
 };
 
@@ -174,12 +174,13 @@ function computeStatsFromList(list) {
   const laki = list.filter(x => String(x.Jenis_Kelamin).startsWith('L')).length;
   const pns = list.filter(x => x.Status_Kepegawaian === 'PNS').length;
   const pppk = list.filter(x => x.Status_Kepegawaian === 'PPPK').length;
+  const p3kPw = list.filter(x => String(x.Status_Kepegawaian || '').toUpperCase() === 'P3K PW').length;
 
   return {
     stats: {
       total,
       gender: { laki, perempuan: total - laki },
-      statusKepegawaian: { pns, pppk, nonAsn: total - pns - pppk },
+      statusKepegawaian: { pns, pppk, p3kPw, nonAsn: Math.max(0, total - pns - pppk - p3kPw) },
       golongan: {
         iv: list.filter(x => String(x.Golongan_Pangkat_Terakhir).startsWith('IV')).length,
         iii: list.filter(x => String(x.Golongan_Pangkat_Terakhir).startsWith('III')).length,
@@ -231,14 +232,31 @@ function handleMockApi(action, payload) {
     } else if (action === 'uploadArchive') {
       const emp = MockDB.employees.find(e => e.NIP === payload.nip);
       MockDB.archives.unshift({
-        ID_Dokumen: 'KARS-' + Math.floor(1000 + Math.random() * 9000),
+        ID_Dokumen: 'LAFKI-' + Math.floor(1000 + Math.random() * 9000),
         NIP: payload.nip,
         Nama_Pemilik: emp ? formatFullName(emp) : payload.nip,
         Kategori_Dokumen: payload.kategori,
         Nama_Berkas: payload.fileName || `${payload.kategori}_${payload.nip}.pdf`,
-        Tanggal_Unggah: new Date().toISOString().slice(0, 10)
+        Tanggal_Unggah: new Date().toISOString().slice(0, 10),
+        base64: payload.base64 || ''
       });
       resolve({ success: true, message: 'Berkas PDF tersimpan aman (Mode Pratinjau)!' });
+    } else if (action === 'deleteEmployee') {
+      const idx = MockDB.employees.findIndex(e => String(e.NIP) === String(payload.nip));
+      if (idx > -1) MockDB.employees.splice(idx, 1);
+      resolve({ success: true, message: `Pegawai NIP ${payload.nip} berhasil dihapus.` });
+    } else if (action === 'deleteAllEmployees') {
+      MockDB.employees.length = 0;
+      resolve({ success: true, message: 'Seluruh data pegawai berhasil dihapus.' });
+    } else if (action === 'getArchiveFile') {
+      const rec = MockDB.archives.find(a => String(a.Drive_File_ID) === String(payload.fileId) || String(a.ID_Dokumen) === String(payload.fileId));
+      const b64 = (rec && rec.base64) ? rec.base64 : buildSamplePdfBase64((rec && rec.Nama_Berkas) || 'Dokumen_LAFKI.pdf');
+      resolve({
+        success: true,
+        fileName: (rec && rec.Nama_Berkas) || 'Dokumen_LAFKI.pdf',
+        mimeType: 'application/pdf',
+        base64: b64
+      });
     } else if (action === 'runMigration') {
       resolve({
         success: true,
@@ -344,14 +362,18 @@ function enterApp() {
     AppState.user.role === 'Operator' ? 'Admin Operator' : 'Pegawai ASN';
   document.getElementById('sidebar-user-initials').textContent = getInitials(AppState.user.nama);
 
-  // Terapkan RBAC pada elemen admin-only
+  // Terapkan RBAC pada elemen admin-only & superadmin-only
   const isAdmin = AppState.user.role === 'SuperAdmin' || AppState.user.role === 'Operator';
+  const isSuperAdmin = AppState.user.role === 'SuperAdmin';
   document.querySelectorAll('.admin-only').forEach(el => {
     if (el.dataset && el.dataset.view === 'settings') {
-      el.style.display = AppState.user.role === 'SuperAdmin' ? '' : 'none';
+      el.style.display = isSuperAdmin ? '' : 'none';
     } else {
       el.style.display = isAdmin ? '' : 'none';
     }
+  });
+  document.querySelectorAll('.superadmin-only').forEach(el => {
+    el.style.display = isSuperAdmin ? '' : 'none';
   });
 
   // SWR Instant Hydration (0ms load dari cache lokal!)
@@ -485,7 +507,8 @@ function renderDashboard2x2(stats) {
   const pP = 100 - pL;
   const pPns = Math.round((stats.statusKepegawaian.pns / t) * 100);
   const pPppk = Math.round((stats.statusKepegawaian.pppk / t) * 100);
-  const pNon = Math.max(0, 100 - pPns - pPppk);
+  const pP3kPw = Math.round(((stats.statusKepegawaian.p3kPw || 0) / t) * 100);
+  const pNon = Math.max(0, 100 - pPns - pPppk - pP3kPw);
 
   document.getElementById('dashboard-stats-2x2').innerHTML = `
     <!-- Card 1: Gender -->
@@ -534,14 +557,14 @@ function renderDashboard2x2(stats) {
         <div class="edu-tile"><span>Sarjana (D4/S1)</span><strong>${stats.pendidikan.s1}</strong><small>${Math.round((stats.pendidikan.s1 / t) * 100)}%</small></div>
         <div class="edu-tile"><span>Diploma III</span><strong>${stats.pendidikan.d3}</strong><small>${Math.round((stats.pendidikan.d3 / t) * 100)}%</small></div>
       </div>
-      <div class="stat-card-foot"><span>Standar KARS</span><span style="color:var(--accent-emerald);">Terakreditasi</span></div>
+      <div class="stat-card-foot"><span>Standar LAFKI</span><span style="color:var(--accent-emerald);">Terakreditasi</span></div>
     </div>
 
     <!-- Card 4: Status Kepegawaian -->
     <div class="glass-panel">
       <div class="stat-card-head">
         <div class="stat-ic-box" style="background:#e0f2fe; color:var(--accent-cyan);"><i class="ri-briefcase-4-line"></i></div>
-        <div><h4>Status Kepegawaian</h4><p>PNS, PPPK &amp; Non-ASN</p></div>
+        <div><h4>Status Kepegawaian</h4><p>PNS, PPPK, P3K PW &amp; Non-ASN</p></div>
       </div>
       <div class="bar-row">
         <div class="bar-row-top"><span>● PNS</span><span>${stats.statusKepegawaian.pns} (${pPns}%)</span></div>
@@ -550,6 +573,10 @@ function renderDashboard2x2(stats) {
       <div class="bar-row">
         <div class="bar-row-top"><span>● PPPK</span><span>${stats.statusKepegawaian.pppk} (${pPppk}%)</span></div>
         <div class="bar-track"><div class="bar-fill" style="width:${pPppk}%; background:var(--accent-emerald);"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-row-top"><span>● P3K PW</span><span>${stats.statusKepegawaian.p3kPw || 0} (${pP3kPw}%)</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pP3kPw}%; background:var(--accent-cyan);"></div></div>
       </div>
       <div class="bar-row">
         <div class="bar-row-top"><span>● Non-ASN</span><span>${stats.statusKepegawaian.nonAsn} (${pNon}%)</span></div>
@@ -663,6 +690,7 @@ function applyDirectoryFilters() {
   }
 
   const isAdmin = AppState.user && (AppState.user.role === 'SuperAdmin' || AppState.user.role === 'Operator');
+  const isSuperAdmin = AppState.user && AppState.user.role === 'SuperAdmin';
   tbody.innerHTML = list.map(e => {
     const strWarn = isExpiringSoon(e.Masa_Berlaku_STR, e.Status_STR_Seumur_Hidup);
     return `
@@ -684,6 +712,7 @@ function applyDirectoryFilters() {
           <div style="display:flex; gap:6px;">
             ${isAdmin ? `<button class="btn-secondary" style="padding:5px 9px;" title="Ubah 7 Tab" onclick="openEditEmployee('${e.NIP}')"><i class="ri-edit-line"></i></button>` : ''}
             <button class="btn-task-wa" title="Kirim WhatsApp" onclick="kirimWaCepat('${e.No_HP_WA || '081234567890'}', '${escapeQuotes(formatFullName(e))}', 'Kepegawaian')"><i class="ri-whatsapp-fill"></i></button>
+            ${isSuperAdmin ? `<button class="btn-secondary" style="padding:5px 9px; color:#ef4444; border-color:#fecaca;" title="Hapus Pegawai" onclick="handleDeleteEmployee('${e.NIP}', '${escapeQuotes(formatFullName(e))}')"><i class="ri-delete-bin-line"></i></button>` : ''}
           </div>
         </td>
       </tr>`;
@@ -774,14 +803,182 @@ function renderArchivesTable() {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Belum ada berkas PDF pada kategori ini.</td></tr>';
     return;
   }
-  tbody.innerHTML = list.map(a => `
+  tbody.innerHTML = list.map(a => {
+    const fId = a.Drive_File_ID || a.ID_Dokumen;
+    return `
     <tr>
       <td><i class="ri-file-pdf-2-line" style="color:#ef4444; font-size:16px; vertical-align:middle;"></i> <strong>${a.Nama_Berkas}</strong><div style="font-size:10.5px; color:var(--text-secondary);">Drive ID: #${a.ID_Dokumen}</div></td>
       <td>${a.Nama_Pemilik || a.NIP}<div style="font-size:11px; color:var(--text-secondary);">${a.NIP}</div></td>
       <td><span class="badge-status info">${a.Kategori_Dokumen}</span></td>
       <td>${String(a.Tanggal_Unggah || '').slice(0, 10)}</td>
-      <td><span class="badge-status active"><i class="ri-shield-check-line"></i> Terverifikasi</span></td>
-    </tr>`).join('');
+      <td>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn-secondary" style="padding:5px 10px; font-size:11.5px;" onclick="viewArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-eye-line"></i> Lihat</button>
+          <button class="btn-primary" style="padding:5px 10px; font-size:11.5px;" onclick="downloadArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-download-line"></i> Unduh</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ==============================================================================
+// 5B. UNGGAH TAB 7, HAPUS PEGAWAI (SUPER ADMIN) & LIHAT/UNDUH ARSIP PDF
+// ==============================================================================
+function uploadTab7Doc(kategori, inputId) {
+  const nip = document.getElementById('form-nip').value.trim();
+  if (!nip) {
+    showToast('Isi NIP pada Tab 1 terlebih dahulu sebelum mengunggah berkas!', 'error');
+    switchFormTab(1);
+    return;
+  }
+  const input = document.getElementById(inputId);
+  const file = input && input.files && input.files[0];
+  if (!file) {
+    showToast(`Pilih file PDF untuk ${kategori} terlebih dahulu.`, 'error');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Ukuran PDF maksimal 5 MB!', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = String(reader.result).split(',')[1] || '';
+    showLoader(true);
+    const res = await api('uploadArchive', {
+      nip,
+      kategori,
+      fileName: `${kategori.replace(/[^a-zA-Z0-9]+/g, '_')}_${nip}.pdf`,
+      base64
+    });
+    showLoader(false);
+    if (res.success) {
+      input.value = '';
+      showToast(`Berkas ${kategori} berhasil diunggah!`, 'success');
+      await loadBootData(false);
+    } else {
+      showToast(res.message || `Gagal mengunggah ${kategori}.`, 'error');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleDeleteEmployee(nip, nama) {
+  if (!AppState.user || AppState.user.role !== 'SuperAdmin') {
+    showToast('Hanya Super Admin yang dapat menghapus data pegawai.', 'error');
+    return;
+  }
+  if (!confirm(`Yakin ingin menghapus data pegawai:\n${nama} (NIP: ${nip})?`)) return;
+  showLoader(true);
+  const res = await api('deleteEmployee', { nip });
+  showLoader(false);
+  if (res.success) {
+    showToast(res.message || 'Pegawai berhasil dihapus.', 'success');
+    await loadBootData(false);
+  } else {
+    showToast(res.message || 'Gagal menghapus pegawai.', 'error');
+  }
+}
+
+async function handleDeleteAllEmployees() {
+  if (!AppState.user || AppState.user.role !== 'SuperAdmin') {
+    showToast('Hanya Super Admin yang dapat menghapus seluruh pegawai.', 'error');
+    return;
+  }
+  const konfirm = prompt('PERINGATAN: Seluruh data master pegawai akan dihapus!\nKetik HAPUS SEMUA untuk melanjutkan:');
+  if (konfirm !== 'HAPUS SEMUA') {
+    showToast('Penghapusan seluruh pegawai dibatalkan.', 'info');
+    return;
+  }
+  showLoader(true);
+  const res = await api('deleteAllEmployees', {});
+  showLoader(false);
+  if (res.success) {
+    showToast(res.message || 'Seluruh data pegawai berhasil dihapus.', 'success');
+    await loadBootData(false);
+  } else {
+    showToast(res.message || 'Gagal menghapus seluruh pegawai.', 'error');
+  }
+}
+
+let _activePdfUrl = '';
+
+function base64ToPdfBlobUrl(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: 'application/pdf' });
+  return URL.createObjectURL(blob);
+}
+
+async function viewArchiveDocument(fileId, fileName) {
+  showLoader(true);
+  const res = await api('getArchiveFile', { fileId });
+  showLoader(false);
+  if (!res.success || !res.base64) {
+    showToast(res.message || 'Gagal membuka pratinjau dokumen PDF.', 'error');
+    return;
+  }
+  if (_activePdfUrl) URL.revokeObjectURL(_activePdfUrl);
+  _activePdfUrl = base64ToPdfBlobUrl(res.base64);
+  document.getElementById('pdf-preview-title').textContent = res.fileName || fileName || 'Pratinjau Dokumen PDF';
+  document.getElementById('pdf-preview-frame').src = _activePdfUrl;
+  const dlBtn = document.getElementById('pdf-preview-download-btn');
+  dlBtn.onclick = () => triggerPdfDownload(_activePdfUrl, res.fileName || fileName || 'Dokumen.pdf');
+  document.getElementById('pdf-preview-modal').classList.add('active');
+}
+
+function closePdfPreviewModal() {
+  document.getElementById('pdf-preview-modal').classList.remove('active');
+  document.getElementById('pdf-preview-frame').src = 'about:blank';
+}
+
+async function downloadArchiveDocument(fileId, fileName) {
+  showLoader(true);
+  const res = await api('getArchiveFile', { fileId });
+  showLoader(false);
+  if (!res.success || !res.base64) {
+    showToast(res.message || 'Gagal mengunduh dokumen PDF.', 'error');
+    return;
+  }
+  const url = base64ToPdfBlobUrl(res.base64);
+  triggerPdfDownload(url, res.fileName || fileName || 'Dokumen.pdf');
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  showToast(`Mengunduh ${res.fileName || fileName}...`, 'success');
+}
+
+function triggerPdfDownload(blobUrl, fileName) {
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = fileName.endsWith('.pdf') ? fileName : fileName + '.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function buildSamplePdfBase64(title) {
+  const safe = String(title || 'Dokumen LAFKI').replace(/[()\\]/g, '');
+  const pdf = `%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj
+4 0 obj << /Length ${65 + safe.length} >> stream
+BT /F1 16 Tf 50 760 Td (E-ASN Nemal - Arsip LAFKI: ${safe}) Tj ET
+endstream endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000380 00000 n 
+trailer << /Size 6 /Root 1 0 R >>
+startxref
+450
+%%EOF`;
+  return btoa(pdf);
 }
 
 // ==============================================================================
