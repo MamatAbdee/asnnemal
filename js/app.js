@@ -291,6 +291,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const demoBox = document.getElementById('demo-login-box');
   if (demoBox) demoBox.style.display = isDemoMode() ? 'block' : 'none';
 
+  // Bersihkan sesi DEMO_TOKEN & cache demo jika GAS_URL produksi sudah aktif
+  if (!isDemoMode() && AppState.token === 'DEMO_TOKEN') {
+    localStorage.removeItem('e_asn_token');
+    localStorage.removeItem('e_asn_user');
+    localStorage.removeItem(SWR_KEY);
+    AppState.token = '';
+    AppState.user = null;
+  }
+
   if (AppState.user && (AppState.token || isDemoMode())) {
     enterApp();
   } else {
@@ -397,14 +406,19 @@ function readSwrCache() {
     const obj = JSON.parse(raw);
     if (Date.now() - obj.ts > SWR_TTL_MS) return null;
     if (obj.role !== (AppState.user && AppState.user.role)) return null;
+    if (obj.demo !== isDemoMode()) return null;
     return obj.data;
   } catch (e) { return null; }
 }
 
 function writeSwrCache(data) {
   try {
-    localStorage.setItem(SWR_KEY, JSON.stringify({ ts: Date.now(), role: AppState.user && AppState.user.role, data }));
+    localStorage.setItem(SWR_KEY, JSON.stringify({ ts: Date.now(), role: AppState.user && AppState.user.role, demo: isDemoMode(), data }));
   } catch (e) {}
+}
+
+function clearSwrCache() {
+  try { localStorage.removeItem(SWR_KEY); } catch (e) {}
 }
 
 async function loadBootData(withSpinner = false) {
@@ -854,6 +868,7 @@ function uploadTab7Doc(kategori, inputId) {
     showLoader(false);
     if (res.success) {
       input.value = '';
+      clearSwrCache();
       showToast(`Berkas ${kategori} berhasil diunggah!`, 'success');
       await loadBootData(false);
     } else {
@@ -873,6 +888,7 @@ async function handleDeleteEmployee(nip, nama) {
   const res = await api('deleteEmployee', { nip });
   showLoader(false);
   if (res.success) {
+    clearSwrCache();
     showToast(res.message || 'Pegawai berhasil dihapus.', 'success');
     await loadBootData(false);
   } else {
@@ -894,6 +910,7 @@ async function handleDeleteAllEmployees() {
   const res = await api('deleteAllEmployees', {});
   showLoader(false);
   if (res.success) {
+    clearSwrCache();
     showToast(res.message || 'Seluruh data pegawai berhasil dihapus.', 'success');
     await loadBootData(false);
   } else {
@@ -1238,13 +1255,17 @@ async function handleSaveEmployeeForm(ev) {
     masaStr: document.getElementById('form-str-exp').value,
     noSip: document.getElementById('form-sip').value.trim(),
     masaSip: document.getElementById('form-sip-exp').value,
-    jenjang: document.getElementById('form-jenjang').value
+    jenjang: document.getElementById('form-jenjang').value,
+    thnLulus: document.getElementById('form-thn-lulus').value.trim(),
+    kampus: document.getElementById('form-kampus').value.trim(),
+    diklat: document.getElementById('form-diklat').value.trim()
   };
 
   showLoader(true);
   const res = await api('saveEmployee', payload);
   showLoader(false);
   if (res.success) {
+    clearSwrCache();
     showToast(res.message, 'success');
     closeEmployeeFormModal();
     await loadBootData(false);
@@ -1299,6 +1320,7 @@ async function handleUploadCredentialSubmit(ev) {
   const res = await api('uploadArchive', payload);
   showLoader(false);
   if (res.success) {
+    clearSwrCache();
     showToast(res.message, 'success');
     closeUploadCredentialModal();
     await loadBootData(false);
