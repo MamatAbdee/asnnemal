@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-ASN Nemal — RSUD Nene Mallomo | Hospital HRMS & Arsip Akreditasi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ==========================================================================
+       0. LOGIN SCREEN (SECURITY GATE — ZERO HARDCODED SECRETS)
+       ========================================================================== -->
+  <div id="login-screen" class="login-screen" style="display: none;">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="brand-icon"><i class="ri-hospital-fill"></i></div>
+        <h1>E-ASN Nemal</h1>
+        <p>RSUD NENE MALLOMO • HRMS &amp; Arsip Akreditasi</p>
+      </div>
+
+      <div class="segmented-tabs" style="margin-top:0;">
+        <button type="button" class="segmented-tab-btn active" style="flex:1;" id="login-role-admin" onclick="selectLoginTab('admin')">Admin / Kasubag</button>
+        <button type="button" class="segmented-tab-btn" style="flex:1;" id="login-role-pegawai" onclick="selectLoginTab('pegawai')">Pegawai ASN</button>
+      </div>
+
+      <form id="login-form" onsubmit="handleLoginSubmit(event)">
+        <div class="input-group">
+          <label for="login-nip">Nomor Induk Pegawai (NIP)</label>
+          <div class="input-wrap">
+            <i class="ri-id-card-line left-ic"></i>
+            <input type="text" id="login-nip" required placeholder="Masukkan 18 digit NIP...">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="login-pass">Kata Sandi</label>
+          <div class="input-wrap">
+            <i class="ri-lock-password-line left-ic"></i>
+            <input type="password" id="login-pass" required placeholder="Masukkan kata sandi...">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%; height:46px; justify-content:center; margin-top:6px;">
+          <i class="ri-login-circle-line"></i> Masuk ke Portal E-ASN Nemal
+        </button>
+      </form>
+
+      <div id="demo-login-box" class="demo-quick-login">
+        <p><i class="ri-flashlight-line"></i> Mode Pratinjau Instan (GAS_URL belum diisi)</p>
+        <div class="demo-btn-row">
+          <button type="button" class="btn-secondary" style="justify-content:center; font-size:11px;" onclick="demoLogin('SuperAdmin')">Super Admin</button>
+          <button type="button" class="btn-secondary" style="justify-content:center; font-size:11px;" onclick="demoLogin('Operator')">Operator</button>
+          <button type="button" class="btn-secondary" style="justify-content:center; font-size:11px;" onclick="demoLogin('Pegawai')">Pegawai</button>
+        </div>
+      </div>
+
+      <p style="text-align:center; font-size:11px; color:var(--text-tertiary); margin-top:16px;">
+        <i class="ri-shield-check-line"></i> Sesi Terenkripsi HMAC SHA-256 • Script Properties
+      </p>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MASTER 3-COLUMN COCKPIT
+       ========================================================================== -->
+  <div id="app-container" style="display: none;">
+
+    <!-- 1. LEFT SIDEBAR -->
+    <aside class="left-sidebar">
+      <div>
+        <div class="brand-box">
+          <div class="brand-icon"><i class="ri-hospital-fill"></i></div>
+          <div>
+            <div class="brand-title">E-ASN Nemal</div>
+            <span class="brand-subtitle">RSUD NENE MALLOMO</span>
+          </div>
+        </div>
+
+        <ul class="nav-menu" id="sidebar-nav-menu">
+          <li class="nav-item active" data-view="dashboard">
+            <div class="nav-circle-icon icon-home"><i class="ri-home-5-line"></i></div>
+            <span>Dashboard</span>
+          </li>
+          <li class="nav-item" data-view="directory">
+            <div class="nav-circle-icon icon-directory"><i class="ri-team-line"></i></div>
+            <span>Data Pegawai</span>
+          </li>
+          <li class="nav-item" data-view="monitoring">
+            <div class="nav-circle-icon icon-monitoring"><i class="ri-calendar-check-line"></i></div>
+            <span>Monitoring KGB &amp; KP</span>
+          </li>
+          <li class="nav-item" data-view="kredensial">
+            <div class="nav-circle-icon icon-credential"><i class="ri-shield-star-line"></i></div>
+            <span>Kredensial STR/SIP</span>
+          </li>
+          <li class="nav-item" data-view="arsip">
+            <div class="nav-circle-icon icon-archive"><i class="ri-folder-shield-2-line"></i></div>
+            <span>Arsip Akreditasi</span>
+          </li>
+          <li class="nav-item admin-only" data-view="settings">
+            <div class="nav-circle-icon icon-settings"><i class="ri-settings-3-line"></i></div>
+            <span>Pengaturan</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div>
+          <div class="workspace-label">WORK SPACE</div>
+          <select id="workspace-unit-select" class="workspace-select" onchange="handleWorkspaceUnitChange(this.value)">
+            <option value="SEMUA">Unit: Seluruh RS</option>
+            <option value="Instalasi Rawat Inap">Instalasi Rawat Inap</option>
+            <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
+            <option value="Instalasi Rawat Jalan">Instalasi Rawat Jalan</option>
+            <option value="Kamar Bersalin (VK)">Kamar Bersalin (VK)</option>
+            <option value="Instalasi Farmasi">Instalasi Farmasi</option>
+          </select>
+        </div>
+
+        <div class="user-profile-card">
+          <div class="user-avatar" id="sidebar-user-initials">HM</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-user-name">dr. Hendra, M.Kes</div>
+            <div class="user-role" id="sidebar-user-role">Kasubag Kepegawaian</div>
+          </div>
+          <button class="btn-icon-sm" title="Ganti Tema Gelap/Terang" onclick="toggleTheme()"><i class="ri-contrast-2-line"></i></button>
+          <button class="btn-icon-sm" title="Keluar" onclick="handleLogout()"><i class="ri-logout-box-r-line"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. CENTER WORKSPACE -->
+    <main class="center-workspace">
+      <header class="main-topbar">
+        <div class="topbar-greeting">
+          <h1 id="page-title">Dashboard</h1>
+          <div class="topbar-date"><i class="ri-calendar-2-line"></i> <span id="current-date-text">Senin, 21 November 2026</span></div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="search-pill-box">
+            <i class="ri-search-line search-icon"></i>
+            <input type="text" id="topbar-search-input" placeholder="Cari NIP, nama pegawai, unit...">
+          </div>
+
+          <div class="bell-cluster">
+            <button class="bell-btn bell-kgb" title="Notifikasi KGB Bulan Ini" onclick="openAlertModal('kgb')">
+              <i class="ri-notification-3-line"></i>
+              <span class="bell-badge badge-red" id="badge-kgb-count">0</span>
+            </button>
+            <button class="bell-btn bell-kp" title="Notifikasi Kenaikan Pangkat 3 Bulan Ke Depan" onclick="openAlertModal('kp')">
+              <i class="ri-flashlight-line"></i>
+              <span class="bell-badge badge-purple" id="badge-kp-count">0</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ================= VIEW 1: DASHBOARD ================= -->
+      <section id="view-dashboard" class="view-section">
+        <div class="hero-cards-grid">
+          <div class="hero-card hero-card-1" id="hero-card-kgb" onclick="openAlertModal('kgb')"></div>
+          <div class="hero-card hero-card-2" id="hero-card-kp" onclick="openAlertModal('kp')"></div>
+          <div class="hero-card hero-card-3" id="hero-card-str" onclick="openAlertModal('str')"></div>
+        </div>
+        <div class="carousel-dots"><span class="active"></span><span></span><span></span></div>
+
+        <!-- 2x2 Stat Cards + Verifikasi Terkini (Persis Referensi Google Stitch) -->
+        <div class="dashboard-lower-grid">
+          <div class="stats-2x2-grid" id="dashboard-stats-2x2"></div>
+
+          <div class="glass-panel" style="display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h4 style="font-size:12px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">Verifikasi Terkini</h4>
+                <span class="badge-status info" id="verify-count-pill">4 Berkas</span>
+              </div>
+              <div class="verify-list" id="recent-verify-list"></div>
+            </div>
+            <a href="javascript:void(0)" onclick="switchView('arsip')" style="display:block; text-align:center; margin-top:14px; font-size:12px; font-weight:700; color:var(--primary-violet); text-decoration:none;">
+              Buka Semua Antrean &rarr;
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 2: DATA PEGAWAI (DIREKTORI) ================= -->
+      <section id="view-directory" class="view-section" style="display: none;">
+        <div class="glass-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:18px; font-weight:800;">Data Induk Pegawai RSUD Nene Mallomo</h2>
+              <p style="font-size:12px; color:var(--text-secondary);" id="dir-subtitle">Menampilkan seluruh SDM terdata (PNS, PPPK, Non-ASN)</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-secondary" onclick="exportEmployeesToCsv()"><i class="ri-download-2-line"></i> Ekspor Excel</button>
+              <button class="btn-primary admin-only" onclick="openAddEmployeeModal()"><i class="ri-user-add-line"></i> + Tambah Pegawai</button>
+            </div>
+          </div>
+
+          <div class="filter-strip">
+            <select id="filter-status-asn" class="workspace-select" style="width:auto; min-width:140px;" onchange="applyDirectoryFilters()">
+              <option value="SEMUA">Status: Semua</option>
+              <option value="PNS">Status: PNS</option>
+              <option value="PPPK">Status: PPPK</option>
+              <option value="Non-ASN">Status: Non-ASN</option>
+            </select>
+            <select id="filter-kredensial" class="workspace-select" style="width:auto; min-width:165px;" onchange="applyDirectoryFilters()">
+              <option value="SEMUA">Kredensial: Semua</option>
+              <option value="AKTIF">STR/SIP Aktif</option>
+              <option value="WARNING">Mendekati Kedaluwarsa</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Pegawai &amp; NIP</th>
+                  <th>Unit Kerja</th>
+                  <th>Status &amp; Golongan</th>
+                  <th>Kredensial STR/SIP</th>
+                  <th>Jadwal Karier</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="employee-table-body"></tbody>
+            </table>
+          </div>
+          <div id="dir-pagination" style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:12px; color:var(--text-secondary);"></div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 3: MONITORING KGB & KP ================= -->
+      <section id="view-monitoring" class="view-section" style="display: none;">
+        <div class="kpi-trio-grid">
+          <div class="kpi-mini-card" style="border-top:4px solid var(--primary-violet);">
+            <div class="k-top"><span>KGB Jatuh Tempo Bulan Ini</span><i class="ri-notification-3-line" style="color:var(--primary-violet);"></i></div>
+            <div class="k-val" id="mon-kgb-val">0</div>
+            <div class="k-sub">Siklus reguler 2 tahunan</div>
+          </div>
+          <div class="kpi-mini-card" style="border-top:4px solid var(--accent-fuchsia);">
+            <div class="k-top"><span>Proyeksi KP 3 Bulan Depan</span><i class="ri-award-line" style="color:var(--accent-fuchsia);"></i></div>
+            <div class="k-val" id="mon-kp-val">0</div>
+            <div class="k-sub">6 Periode BKN (Feb/Apr/Jun/Ags/Okt/Des)</div>
+          </div>
+          <div class="kpi-mini-card" style="border-top:4px solid var(--accent-emerald);">
+            <div class="k-top"><span>Estimasi BUP Pensiun</span><i class="ri-user-star-line" style="color:var(--accent-emerald);"></i></div>
+            <div class="k-val" id="mon-bup-val">58 / 60 / 65</div>
+            <div class="k-sub">Otomatis sesuai jenjang jabatan</div>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <h3 style="font-size:16px; font-weight:800;">Daftar Nominatif Pengingat KGB &amp; Kenaikan Pangkat</h3>
+            <button class="btn-secondary" onclick="exportEmployeesToCsv()"><i class="ri-file-excel-2-line" style="color:#10b981;"></i> Unduh Nominatif Excel</button>
+          </div>
+          <div class="segmented-tabs" style="margin-top:0;">
+            <button class="segmented-tab-btn active" id="mon-tab-kgb" onclick="renderMonitoringTable('kgb')">KGB Bulan Ini</button>
+            <button class="segmented-tab-btn" id="mon-tab-kp" onclick="renderMonitoringTable('kp')">Kenaikan Pangkat (3 Bulan)</button>
+            <button class="segmented-tab-btn" id="mon-tab-bup" onclick="renderMonitoringTable('bup')">Proyeksi Pensiun (BUP)</button>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Pegawai &amp; NIP</th>
+                  <th>Golongan &amp; Jabatan</th>
+                  <th>Unit Kerja</th>
+                  <th>Jadwal Target</th>
+                  <th>Pengingat WhatsApp</th>
+                </tr>
+              </thead>
+              <tbody id="monitoring-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 4: KREDENSIAL STR/SIP ================= -->
+      <section id="view-kredensial" class="view-section" style="display: none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <div>
+            <h2 style="font-size:18px; font-weight:800;">Kredensial STR / SIP Tenaga Medis &amp; Keperawatan</h2>
+            <p style="font-size:12px; color:var(--text-secondary);">Pemantauan masa berlaku STR, SIP, UKOM, &amp; RKK standar akreditasi rumah sakit</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-secondary" onclick="exportEmployeesToCsv()"><i class="ri-download-line"></i> Ekspor Matriks Akreditasi</button>
+            <button class="btn-primary" onclick="openUploadCredentialModal()"><i class="ri-upload-cloud-2-line"></i> + Unggah Kredensial</button>
+          </div>
+        </div>
+
+        <div class="kpi-trio-grid">
+          <div class="kpi-mini-card">
+            <div class="k-top"><span>Kepatuhan STR/SIP Aktif</span><i class="ri-shield-check-line" style="color:var(--accent-emerald);"></i></div>
+            <div class="k-val" id="kred-rate-val">96.8%</div>
+            <div class="k-sub">Tenaga medis &amp; perawat aktif</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="k-top"><span>Mendekati Kedaluwarsa (H-90)</span><i class="ri-time-line" style="color:var(--accent-amber);"></i></div>
+            <div class="k-val" id="kred-warn-val">0</div>
+            <div class="k-sub">Perlu perpanjangan SIP/STR</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="k-top"><span>Kredensial RKK &amp; UKOM</span><i class="ri-award-line" style="color:var(--primary-violet);"></i></div>
+            <div class="k-val">94.5%</div>
+            <div class="k-sub">Siap Asesmen Akreditasi</div>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="filter-strip">
+            <button class="pill-tab active" data-kred="ALL" onclick="filterKredensial('ALL', this)">Semua Nakes</button>
+            <button class="pill-tab" data-kred="WARN" onclick="filterKredensial('WARN', this)">Akan Kedaluwarsa</button>
+            <button class="pill-tab" data-kred="LIFETIME" onclick="filterKredensial('LIFETIME', this)">STR Seumur Hidup</button>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Pegawai &amp; Profesi</th>
+                  <th>Nomor &amp; Masa STR</th>
+                  <th>Nomor &amp; Masa SIP</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="kredensial-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 5: ARSIP AKREDITASI ================= -->
+      <section id="view-arsip" class="view-section" style="display: none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <div>
+            <h2 style="font-size:18px; font-weight:800;">Arsip Digital Akreditasi (KARS / STARKES)</h2>
+            <p style="font-size:12px; color:var(--text-secondary);">Repositori dokumen kredensial &amp; kepegawaian terproteksi di Google Drive Privat</p>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-primary" onclick="openUploadCredentialModal()"><i class="ri-file-upload-line"></i> + Unggah Berkas PDF</button>
+          </div>
+        </div>
+
+        <div class="kpi-trio-grid">
+          <div class="kpi-mini-card">
+            <div class="k-top"><span>Kelengkapan Berkas KARS</span><i class="ri-checkbox-circle-line" style="color:var(--accent-emerald);"></i></div>
+            <div class="k-val">98.2%</div>
+            <div class="k-sub">Standar Akreditasi RSUD</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="k-top"><span>Total Dokumen Terverifikasi</span><i class="ri-cloud-line" style="color:var(--accent-cyan);"></i></div>
+            <div class="k-val" id="arsip-total-val">0</div>
+            <div class="k-sub">Tersimpan di Google Drive Privat</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="k-top"><span>Siap Asesmen STARKES</span><i class="ri-medal-line" style="color:var(--primary-violet);"></i></div>
+            <div class="k-val">100%</div>
+            <div class="k-sub">Audit Ready • Zero Public Link</div>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="filter-strip">
+            <button class="pill-tab active" onclick="filterArchives('ALL', this)">Semua Berkas</button>
+            <button class="pill-tab" onclick="filterArchives('STR', this)">STR &amp; SIP</button>
+            <button class="pill-tab" onclick="filterArchives('SK', this)">SK Kepegawaian</button>
+            <button class="pill-tab" onclick="filterArchives('Ijazah', this)">Ijazah &amp; Transkrip</button>
+            <button class="pill-tab" onclick="filterArchives('RKK', this)">RKK &amp; SPK</button>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nama Berkas PDF</th>
+                  <th>Pemilik Pegawai &amp; NIP</th>
+                  <th>Kategori Dokumen</th>
+                  <th>Tanggal Unggah</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="archive-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 6: PENGATURAN & MIGRASI (SUPER ADMIN) ================= -->
+      <section id="view-settings" class="view-section" style="display: none;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap:18px;">
+          <!-- Panel 1: Rahasia Script Properties -->
+          <div class="glass-panel">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;"><i class="ri-key-2-line" style="color:var(--primary-violet);"></i> Rahasia Script Properties (R5)</h3>
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">Token API pihak ketiga hanya disimpan di Script Properties GAS, tidak pernah di kode frontend atau Sheets.</p>
+            <div class="input-group">
+              <label>Token WhatsApp Gateway (Fonnte) — Opsional</label>
+              <input type="password" id="setting-wa-token" class="form-control" placeholder="Kosongkan jika tidak diubah (ketik __HAPUS__ untuk hapus)">
+              <small id="setting-wa-status" style="font-size:11px; color:var(--text-secondary); display:block; margin-top:4px;">Status: Mode Direct Link wa.me aktif</small>
+            </div>
+            <button class="btn-primary" onclick="handleSaveWaToken()"><i class="ri-shield-keyhole-line"></i> Simpan ke Script Properties</button>
+          </div>
+
+          <!-- Panel 2: Migrasi Database Spreadsheet -->
+          <div class="glass-panel">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;"><i class="ri-database-2-line" style="color:var(--accent-emerald);"></i> Migrasi Database Spreadsheet</h3>
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">Upgrade aman tanpa menyentuh spreadsheet lama. Mendukung simulasi Dry-Run dan Delta-Sync idempoten.</p>
+            <div class="input-group">
+              <label>ID atau URL Google Spreadsheet Lama</label>
+              <input type="text" id="migrasi-old-id" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-secondary" onclick="handleRunMigration(true)"><i class="ri-search-eye-line"></i> Simulasi Dry-Run</button>
+              <button class="btn-primary" style="background:var(--grad-emerald);" onclick="handleRunMigration(false)"><i class="ri-refresh-line"></i> Eksekusi Delta-Sync</button>
+            </div>
+            <pre id="migrasi-output" style="display:none; margin-top:12px; padding:10px; border-radius:10px; background:#0f172a; color:#34d399; font-size:11px; overflow-x:auto;"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 3. RIGHT SIDEBAR -->
+    <aside class="right-sidebar">
+      <div class="right-top-stack">
+        <!-- Calendar Ribbon -->
+        <div>
+          <div class="calendar-head">
+            <h3 id="calendar-month-label">November 2026</h3>
+            <div style="display:flex; gap:4px;">
+              <button class="btn-icon-sm"><i class="ri-arrow-left-s-line"></i></button>
+              <button class="btn-icon-sm"><i class="ri-arrow-right-s-line"></i></button>
+            </div>
+          </div>
+          <div class="date-ribbon" id="calendar-date-ribbon">
+            <div class="date-pill-item" data-day="19"><span class="d-num">19</span><span class="d-day">Kam</span></div>
+            <div class="date-pill-item" data-day="20"><span class="d-num">20</span><span class="d-day">Jum</span></div>
+            <div class="date-pill-item active" data-day="21"><span class="d-num">21</span><span class="d-day">Sab</span></div>
+            <div class="date-pill-item" data-day="22"><span class="d-num">22</span><span class="d-day">Min</span></div>
+          </div>
+        </div>
+
+        <!-- Jadwal Prioritas -->
+        <div>
+          <div class="sec-mini-head">
+            <h4>Jadwal Prioritas</h4>
+            <a href="javascript:void(0)" onclick="openAlertModal('kgb')">Lihat Semua</a>
+          </div>
+          <div class="task-list-items" id="priority-tasks-list"></div>
+        </div>
+
+        <!-- Riwayat WA -->
+        <div>
+          <div class="sec-mini-head">
+            <h4>Riwayat WA <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--wa-green); margin-left:4px;"></span></h4>
+            <span style="font-size:10.5px; color:var(--text-tertiary); font-weight:600;">Hari Ini</span>
+          </div>
+          <div class="wa-feed-items" id="wa-feed-list-container"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Gradient CTA -->
+      <button class="btn-right-cta admin-only" onclick="openAddEmployeeModal()">
+        <i class="ri-add-line" style="font-size:18px;"></i> + Entri Usulan Baru
+      </button>
+    </aside>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 1: PUSAT PERINGATAN DINI (LONCENG KGB / KP / STR + WA 1-KLIK)
+       ========================================================================== -->
+  <div id="notification-center-modal" class="modal-overlay">
+    <div class="modal-container">
+      <button class="modal-close-btn" onclick="closeAlertModal()"><i class="ri-close-line"></i></button>
+      <h3 style="font-size:19px; font-weight:800;">Pusat Peringatan Dini Kepegawaian</h3>
+
+      <div class="segmented-tabs">
+        <button class="segmented-tab-btn active" data-tab="kgb" onclick="switchAlertTab('kgb')" id="modal-tab-kgb">KGB Bulan Ini</button>
+        <button class="segmented-tab-btn" data-tab="kp" onclick="switchAlertTab('kp')" id="modal-tab-kp">KP 3 Bulan Depan</button>
+        <button class="segmented-tab-btn" data-tab="str" onclick="switchAlertTab('str')" id="modal-tab-str">STR/SIP Kedaluwarsa</button>
+      </div>
+
+      <div id="modal-alert-list-container"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px solid var(--card-border-subtle); flex-wrap:wrap; gap:10px;">
+        <span id="modal-alert-summary" style="font-size:12px; color:var(--text-secondary); font-weight:600;">0 Pegawai Memerlukan Tindakan</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-secondary" onclick="exportEmployeesToCsv()">Unduh Rekapitulasi Excel</button>
+          <button class="btn-primary" style="background:#0f172a; box-shadow:none;" onclick="closeAlertModal()">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: FORMULIR PEGAWAI MODULAR 7-TAB
+       ========================================================================== -->
+  <div id="employee-form-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 820px;">
+      <button class="modal-close-btn" onclick="closeEmployeeFormModal()"><i class="ri-close-line"></i></button>
+      <h3 style="font-size:18px; font-weight:800;" id="form-modal-title">Tambah Pegawai Baru</h3>
+      <p style="font-size:12px; color:var(--text-secondary);">Formulir terpadu 7 tab • Kalkulasi KGB, KP &amp; Pensiun otomatis</p>
+
+      <div class="segmented-tabs" style="overflow-x:auto; flex-wrap:nowrap;">
+        <button type="button" class="form-tab-btn segmented-tab-btn active" data-tab="1" onclick="switchFormTab(1)">1. Pribadi</button>
+        <button type="button" class="form-tab-btn segmented-tab-btn" data-tab="2" onclick="switchFormTab(2)">2. Kepegawaian</button>
+        <button type="button" class="form-tab-btn segmented-tab-btn" data-tab="3" onclick="switchFormTab(3)">3. Karier/KGB</button>
+        <button type="button" class="form-tab-btn segmented-tab-btn" data-tab="4" onclick="switchFormTab(4)">4. STR/SIP</button>
+        <button type="button" class="form-tab-btn segmented-tab-btn" data-tab="5" onclick="switchFormTab(5)">5. Pendidikan</button>
+        <button type="button" class="form-tab-btn segmented-tab-btn" data-tab="6" onclick="switchFormTab(6)">6. Diklat</button>
+        <button type="button" class="form-tab-btn segmented-tab-btn" data-tab="7" onclick="switchFormTab(7)">7. Arsip</button>
+      </div>
+
+      <form id="pegawai-form" onsubmit="handleSaveEmployeeForm(event)">
+        <!-- Tab 1 -->
+        <div class="form-tab-content" data-pane="1">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+            <div class="input-group"><label>NIP *</label><input type="text" id="form-nip" required class="form-control" placeholder="18 Digit NIP"></div>
+            <div class="input-group"><label>NIK</label><input type="text" id="form-nik" class="form-control" placeholder="16 Digit NIK"></div>
+            <div class="input-group" style="grid-column:span 2;"><label>Nama Lengkap (Tanpa Gelar) *</label><input type="text" id="form-nama" required class="form-control"></div>
+            <div class="input-group"><label>Gelar Depan</label><input type="text" id="form-gelar-depan" class="form-control" placeholder="dr. / Ns."></div>
+            <div class="input-group"><label>Gelar Belakang</label><input type="text" id="form-gelar-belakang" class="form-control" placeholder="Sp.PD / S.Kep"></div>
+            <div class="input-group"><label>Jenis Kelamin</label><select id="form-gender" class="form-control"><option value="L">Laki-Laki</option><option value="P">Perempuan</option></select></div>
+            <div class="input-group"><label>Tanggal Lahir (Untuk BUP)</label><input type="date" id="form-tgl-lahir" class="form-control"></div>
+            <div class="input-group"><label>No. WhatsApp *</label><input type="text" id="form-hp" class="form-control" placeholder="081234567890"></div>
+            <div class="input-group"><label>Email Kedinasan</label><input type="email" id="form-email" class="form-control"></div>
+          </div>
+        </div>
+        <!-- Tab 2 -->
+        <div class="form-tab-content" data-pane="2" style="display:none;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+            <div class="input-group"><label>Status Kepegawaian</label><select id="form-status-asn" class="form-control"><option value="PNS">PNS</option><option value="PPPK">PPPK</option><option value="Non-ASN">Non-ASN</option></select></div>
+            <div class="input-group"><label>Status Aktif</label><select id="form-status-aktif" class="form-control"><option value="Aktif">Aktif</option><option value="Tubel">Tugas Belajar</option><option value="Cuti">Cuti</option><option value="Pensiun">Pensiun</option></select></div>
+            <div class="input-group"><label>Jenis Jabatan</label><select id="form-jenis-jabatan" class="form-control"><option value="Fungsional Tertentu Nakes">Fungsional Tertentu Nakes</option><option value="Struktural">Struktural</option><option value="Pelaksana">Pelaksana / Administrasi</option></select></div>
+            <div class="input-group"><label>Nama Jabatan</label><input type="text" id="form-jabatan" class="form-control" placeholder="Dokter Ahli Madya / Perawat"></div>
+            <div class="input-group" style="grid-column:span 2;"><label>Unit Kerja / Ruangan</label><input type="text" id="form-unit" class="form-control" placeholder="Instalasi Rawat Inap / IGD"></div>
+          </div>
+        </div>
+        <!-- Tab 3 -->
+        <div class="form-tab-content" data-pane="3" style="display:none;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+            <div class="input-group"><label>Golongan / Pangkat Terakhir</label><select id="form-golongan" class="form-control"><option value="II/c">II/c</option><option value="III/a">III/a</option><option value="III/b">III/b</option><option value="III/c">III/c</option><option value="III/d">III/d</option><option value="IV/a">IV/a</option><option value="IV/b">IV/b</option><option value="IV/c">IV/c</option></select></div>
+            <div class="input-group"><label>TMT Golongan Terakhir</label><input type="date" id="form-tmt-gol" class="form-control"></div>
+            <div class="input-group"><label>TMT KGB Terakhir (Auto +2 Thn)</label><input type="date" id="form-tmt-kgb" class="form-control"></div>
+            <div class="input-group"><label>Proyeksi Kenaikan Pangkat (KP)</label><input type="date" id="form-jadwal-kp" class="form-control"></div>
+            <div class="input-group" style="grid-column:span 2;"><label>Batas Usia Pensiun (BUP)</label><select id="form-bup" class="form-control"><option value="58">58 Tahun (Pelaksana / Keterampilan)</option><option value="60">60 Tahun (Dokter / Fungsional Madya)</option><option value="65">65 Tahun (Fungsional Utama)</option></select></div>
+          </div>
+        </div>
+        <!-- Tab 4 -->
+        <div class="form-tab-content" data-pane="4" style="display:none;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+            <div class="input-group"><label>Profesi</label><input type="text" id="form-profesi" class="form-control" placeholder="Dokter Spesialis / Perawat / Bidan"></div>
+            <div class="input-group"><label>Status UKOM</label><select id="form-ukom" class="form-control"><option value="Lulus">Lulus</option><option value="Belum">Belum UKOM</option></select></div>
+            <div class="input-group"><label>Nomor STR</label><input type="text" id="form-str" class="form-control"></div>
+            <div class="input-group"><label>Masa Berlaku STR</label><input type="date" id="form-str-exp" class="form-control"></div>
+            <div class="input-group"><label>Nomor SIP</label><input type="text" id="form-sip" class="form-control"></div>
+            <div class="input-group"><label>Masa Berlaku SIP</label><input type="date" id="form-sip-exp" class="form-control"></div>
+          </div>
+        </div>
+        <!-- Tab 5 -->
+        <div class="form-tab-content" data-pane="5" style="display:none;">
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+            <div class="input-group"><label>Jenjang Pendidikan Terakhir</label><select id="form-jenjang" class="form-control"><option value="D3">Diploma III</option><option value="S1">Sarjana (D4/S1)</option><option value="Profesi">Profesi / Spesialis</option><option value="S2">Magister (S2)</option><option value="S3">Doktor (S3)</option></select></div>
+            <div class="input-group"><label>Tahun Lulus</label><input type="number" id="form-thn-lulus" class="form-control" placeholder="2018"></div>
+            <div class="input-group" style="grid-column:span 2;"><label>Institusi / Perguruan Tinggi</label><input type="text" id="form-kampus" class="form-control" placeholder="Universitas Hasanuddin"></div>
+          </div>
+        </div>
+        <!-- Tab 6 -->
+        <div class="form-tab-content" data-pane="6" style="display:none;">
+          <div class="input-group"><label>Riwayat Pelatihan / Diklat Klinis (BCLS, ACLS, PPI, dll.)</label><textarea id="form-diklat" class="form-control" style="height:100px; padding-top:10px;" placeholder="Contoh: ACLS 2025 (24 JPL), Pelatihan PPI Dasar 2024 (16 JPL)"></textarea></div>
+        </div>
+        <!-- Tab 7 -->
+        <div class="form-tab-content" data-pane="7" style="display:none;">
+          <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">Setelah menyimpan data pegawai, gunakan tombol <strong>Unggah Kredensial / Berkas PDF</strong> untuk menyimpan ijazah, SK, STR, dan SIP langsung ke Google Drive Privat RSUD.</p>
+          <button type="button" class="btn-secondary" onclick="closeEmployeeFormModal(); openUploadCredentialModal();"><i class="ri-upload-cloud-2-line"></i> Buka Modal Unggah Berkas PDF</button>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px dashed var(--card-border-subtle);">
+          <button type="button" class="btn-secondary" onclick="closeEmployeeFormModal()">Batal</button>
+          <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: UNGGAH KREDENSIAL STR / SIP / RKK (PERSIS GOOGLE STITCH)
+       ========================================================================== -->
+  <div id="upload-credential-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 600px;">
+      <button class="modal-close-btn" onclick="closeUploadCredentialModal()"><i class="ri-close-line"></i></button>
+      <h3 style="font-size:18px; font-weight:800; margin-bottom:4px;">Unggah Kredensial &amp; Berkas Akreditasi</h3>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">Berkas PDF disimpan otomatis di Google Drive Privat (Zero Public Link)</p>
+
+      <form id="upload-credential-form" onsubmit="handleUploadCredentialSubmit(event)">
+        <div class="input-group">
+          <label>Tenaga Medis / Pegawai Terkait</label>
+          <select id="upload-emp-select" class="form-control" required></select>
+        </div>
+
+        <div class="input-group">
+          <label>Kategori Dokumen Legalitas</label>
+          <select id="upload-doc-cat" class="form-control" required>
+            <option value="STR">STR Medis (Surat Tanda Registrasi)</option>
+            <option value="SIP">SIP Faskes (Surat Izin Praktik)</option>
+            <option value="RKK">RKK &amp; SPK (Kewenangan Klinis)</option>
+            <option value="SK">SK Kepegawaian (Pangkat / KGB)</option>
+            <option value="Ijazah">Ijazah &amp; Transkrip Nilai</option>
+          </select>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+          <div class="input-group"><label>Nomor Registrasi / Dokumen</label><input type="text" id="upload-doc-num" class="form-control" placeholder="73.01.1.1.20.21..."></div>
+          <div class="input-group"><label>Masa Berlaku Sampai</label><input type="date" id="upload-doc-exp" class="form-control"></div>
+        </div>
+
+        <div class="input-group" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="upload-str-lifetime" style="width:16px; height:16px;">
+          <label for="upload-str-lifetime" style="margin:0; font-size:12px; font-weight:600; color:var(--text-secondary);">STR Berlaku Seumur Hidup (Sesuai amanat UU Kesehatan No. 17 Tahun 2023)</label>
+        </div>
+
+        <div class="input-group">
+          <label>Berkas PDF (Maksimal 5 MB)</label>
+          <div class="dropzone-box" onclick="document.getElementById('upload-file-input').click()">
+            <i class="ri-upload-cloud-2-line" style="font-size:28px; color:var(--primary-violet);"></i>
+            <p id="upload-file-label" style="font-size:12.5px; font-weight:700; margin-top:6px;">Klik untuk memilih berkas PDF</p>
+            <input type="file" id="upload-file-input" accept="application/pdf" style="display:none;" onchange="handleFilePicked(this)">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
+          <span style="font-size:11px; color:var(--text-secondary);"><i class="ri-shield-check-line" style="color:var(--accent-emerald);"></i> Terintegrasi Standar KARS/STARKES</span>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-secondary" onclick="closeUploadCredentialModal()">Batal</button>
+            <button type="submit" class="btn-primary"><i class="ri-verified-badge-line"></i> Simpan &amp; Verifikasi Berkas</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Sticky Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="javascript:void(0)" class="mobile-nav-item active" data-view="dashboard"><i class="ri-home-5-line" style="font-size:20px;"></i><span>Beranda</span></a>
+    <a href="javascript:void(0)" class="mobile-nav-item" data-view="directory"><i class="ri-team-line" style="font-size:20px;"></i><span>Pegawai</span></a>
+    <a href="javascript:void(0)" class="mobile-nav-item" data-view="kredensial"><i class="ri-shield-star-line" style="font-size:20px;"></i><span>STR/SIP</span></a>
+    <a href="javascript:void(0)" class="mobile-nav-item" data-view="arsip"><i class="ri-folder-shield-2-line" style="font-size:20px;"></i><span>Arsip</span></a>
+  </nav>
+
+  <div id="toast-container" class="toast-container"></div>
+  <div id="app-loader" style="display:none; position:fixed; inset:0; background:rgba(255,255,255,0.55); backdrop-filter:blur(4px); z-index:999999; align-items:center; justify-content:center;">
+    <div style="text-align:center;">
+      <i class="ri-loader-4-line ri-spin" style="font-size:40px; color:var(--primary-violet);"></i>
+      <p style="font-weight:700; margin-top:6px; font-size:13px;">Menyinkronkan Data...</p>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

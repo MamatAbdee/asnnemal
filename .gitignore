@@ -1,0 +1,9 @@
+# Jangan unggah file backend Google Apps Script ke GitHub Pages publik
+backend/
+*.gs
+desain ui ux/
+PRD_E_ASN_Nemal.md
+Wireframe_Prompt_E_ASN_Nemal.md
+UIUX_Design_Prompt_E_ASN_Nemal.md
+.DS_Store
+Thumbs.db
