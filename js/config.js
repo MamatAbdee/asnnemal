@@ -10,7 +10,7 @@
 
 const CONFIG = {
   // Ganti URL di bawah dengan Web App URL dari deployment Google Apps Script Anda:
-  // Contoh: 'https://script.google.com/macros/s/AKfycbx.../exec'
+  // Contoh: 'https://script.google.com/macros/s/AKfycbwTmUmq-X3JJE2cOrN17pNiV6LOfJxvqCplZ5LV884whN1FojcXu67tljZG7SeCOtmN/exec'
   GAS_URL: '',
 
   // Nama Aplikasi & Instansi
