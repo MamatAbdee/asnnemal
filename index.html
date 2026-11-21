@@ -704,7 +704,7 @@
   <!-- ==========================================================================
        MODAL 4: PRATINJAU & UNDUH DOKUMEN PDF (ARSIP AKREDITASI)
        ========================================================================== -->
-  <div id="pdf-preview-modal" class="modal-overlay">
+  <div id="pdf-preview-modal" class="modal-overlay" style="z-index: 16000;">
     <div class="modal-container" style="max-width: 900px; width: 95%;">
       <button class="modal-close-btn" onclick="closePdfPreviewModal()"><i class="ri-close-line"></i></button>
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding-right:36px; margin-bottom:14px; flex-wrap:wrap;">
@@ -716,6 +716,20 @@
       </div>
       <div style="width:100%; height:70vh; border-radius:14px; overflow:hidden; border:1px solid var(--card-border-subtle); background:#f1f5f9;">
         <iframe id="pdf-preview-frame" style="width:100%; height:100%; border:none;" title="Pratinjau PDF"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 5: POPUP PROFIL PEGAWAI & CHECKLIST KELENGKAPAN DOKUMEN
+       ========================================================================== -->
+  <div id="employee-profile-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 780px;">
+      <button class="modal-close-btn" onclick="closeEmployeeProfileModal()"><i class="ri-close-line"></i></button>
+      <div id="employee-profile-modal-body"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:14px; border-top:1px dashed var(--card-border-subtle);">
+        <button type="button" class="btn-secondary admin-only" id="profile-modal-edit-btn"><i class="ri-edit-line"></i> Ubah Data Pegawai</button>
+        <button type="button" class="btn-primary" onclick="closeEmployeeProfileModal()">Tutup</button>
       </div>
     </div>
   </div>

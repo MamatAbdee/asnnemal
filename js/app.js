@@ -696,10 +696,10 @@ function applyDirectoryFilters() {
     return `
       <tr>
         <td>
-          <div style="display:flex; align-items:center; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" title="Klik untuk melihat profil & checklist dokumen" onclick="openEmployeeProfileModal('${escapeQuotes(e.NIP)}')">
             <div class="wa-feed-thumb">${getInitials(e.Nama_Lengkap)}</div>
             <div>
-              <strong>${formatFullName(e)}</strong>
+              <strong style="color:var(--primary-violet);">${formatFullName(e)}</strong>
               <div style="font-size:11px; color:var(--text-secondary); letter-spacing:0.03em;">${e.NIP}</div>
             </div>
           </div>
@@ -931,6 +931,110 @@ async function viewArchiveDocument(fileId, fileName) {
 function closePdfPreviewModal() {
   document.getElementById('pdf-preview-modal').classList.remove('active');
   document.getElementById('pdf-preview-frame').src = 'about:blank';
+}
+
+function openEmployeeProfileModal(nip) {
+  const emps = (AppState.bootData && AppState.bootData.employees) || [];
+  const e = emps.find(x => String(x.NIP) === String(nip));
+  if (!e) {
+    showToast('Data profil pegawai tidak ditemukan.', 'error');
+    return;
+  }
+
+  const allArchives = (AppState.bootData && AppState.bootData.archives) || [];
+  const empArchives = allArchives.filter(a => String(a.NIP) === String(nip));
+
+  const checklistSpecs = [
+    { label: '1. SK CPNS', match: a => /sk\s*cpns|cpns/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) },
+    { label: '2. SK PNS', match: a => /\bsk[\s_]*pns\b/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) },
+    { label: '3. SK Pangkat/Gol Terakhir', match: a => /pangkat|gol|^sk$/i.test(`${a.Kategori_Dokumen || ''}`) || /pangkat/i.test(`${a.Nama_Berkas || ''}`) },
+    { label: '4. SK Jabatan Terakhir', match: a => /jabatan/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) },
+    { label: '5. SK Berkala Terakhir (KGB)', match: a => /berkala|kgb/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) },
+    { label: '6. Ijazah Terakhir', match: a => /ijazah/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) },
+    { label: '7. Sertifikat Pelatihan', match: a => /sertifikat|pelatihan|diklat/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) },
+    { label: '8. Kredensial (STR / SIP / RKK)', match: a => /kredensial|str|sip|rkk|spk/i.test(`${a.Kategori_Dokumen || ''} ${a.Nama_Berkas || ''}`) }
+  ];
+
+  let uploadedCount = 0;
+  const checklistHtml = checklistSpecs.map(spec => {
+    const found = empArchives.find(spec.match);
+    if (found) uploadedCount++;
+    const fId = found ? (found.Drive_File_ID || found.ID_Dokumen) : '';
+    return `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:12px; border:1px solid var(--card-border-subtle); background:${found ? 'rgba(220,252,231,0.35)' : 'var(--bg-card-subtle)'}; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+          <i class="${found ? 'ri-checkbox-circle-fill' : 'ri-close-circle-line'}" style="font-size:19px; color:${found ? '#10b981' : '#ef4444'}; flex-shrink:0;"></i>
+          <div style="min-width:0;">
+            <div style="font-size:12.5px; font-weight:700;">${spec.label}</div>
+            <div style="font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px;">
+              ${found ? found.Nama_Berkas : 'Belum diunggah'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          ${found ? `
+            <button type="button" class="btn-secondary" style="padding:5px 10px; font-size:11.5px;" onclick="viewArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(found.Nama_Berkas)}')"><i class="ri-eye-line"></i> Lihat</button>
+            <button type="button" class="btn-primary" style="padding:5px 10px; font-size:11.5px;" onclick="downloadArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(found.Nama_Berkas)}')"><i class="ri-download-line"></i> Unduh</button>
+          ` : `<span class="badge-status danger">Belum Upload</span>`}
+        </div>
+      </div>`;
+  }).join('');
+
+  const body = document.getElementById('employee-profile-modal-body');
+  body.innerHTML = `
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px; padding-right:32px; flex-wrap:wrap;">
+      <div class="alert-avatar" style="width:58px; height:58px; font-size:19px;">${getInitials(e.Nama_Lengkap)}</div>
+      <div style="flex:1; min-width:200px;">
+        <h3 style="font-size:19px; font-weight:800; line-height:1.2;">${formatFullName(e)}</h3>
+        <div style="font-size:12px; color:var(--text-secondary); margin-top:3px; letter-spacing:0.03em;">NIP: <strong>${e.NIP}</strong> • NIK: ${e.NIK || '-'}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+          <span class="badge-status info">${e.Status_Kepegawaian || 'PNS'}</span>
+          <span class="badge-status active">${e.Golongan_Pangkat_Terakhir || '-'}</span>
+          <span class="badge-status warning">${e.Unit_Kerja || 'RSUD Nene Mallomo'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(175px, 1fr)); gap:10px; margin-bottom:18px;">
+      <div style="padding:10px 12px; border-radius:12px; background:var(--bg-card-subtle); border:1px solid var(--card-border-subtle);">
+        <div style="font-size:10.5px; color:var(--text-secondary); font-weight:700;">JABATAN / PROFESI</div>
+        <div style="font-size:12.5px; font-weight:700; margin-top:2px;">${e.Nama_Jabatan || '-'}</div>
+      </div>
+      <div style="padding:10px 12px; border-radius:12px; background:var(--bg-card-subtle); border:1px solid var(--card-border-subtle);">
+        <div style="font-size:10.5px; color:var(--text-secondary); font-weight:700;">KONTAK WA / EMAIL</div>
+        <div style="font-size:12px; font-weight:700; margin-top:2px;">${e.No_HP_WA || '-'}<br><span style="font-weight:500; color:var(--text-secondary);">${e.Email || '-'}</span></div>
+      </div>
+      <div style="padding:10px 12px; border-radius:12px; background:var(--bg-card-subtle); border:1px solid var(--card-border-subtle);">
+        <div style="font-size:10.5px; color:var(--text-secondary); font-weight:700;">KGB &amp; KENAIKAN PANGKAT</div>
+        <div style="font-size:12px; font-weight:700; margin-top:2px;">KGB: ${e.Jadwal_KGB_Berikutnya || '-'}<br>KP: ${e.Jadwal_KP_Berikutnya || '-'}</div>
+      </div>
+      <div style="padding:10px 12px; border-radius:12px; background:var(--bg-card-subtle); border:1px solid var(--card-border-subtle);">
+        <div style="font-size:10.5px; color:var(--text-secondary); font-weight:700;">STR / SIP &amp; PENSIUN</div>
+        <div style="font-size:12px; font-weight:700; margin-top:2px;">STR: ${e.Masa_Berlaku_STR || '-'}<br>BUP: ${e.TMT_Pensiun || '-'}</div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h4 style="font-size:13.5px; font-weight:800;"><i class="ri-file-list-3-line" style="color:var(--primary-violet);"></i> Checklist Kelengkapan Dokumen</h4>
+      <span class="badge-status ${uploadedCount === checklistSpecs.length ? 'active' : 'warning'}">${uploadedCount} / ${checklistSpecs.length} Diunggah</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${checklistHtml}
+    </div>
+  `;
+
+  const editBtn = document.getElementById('profile-modal-edit-btn');
+  if (editBtn) {
+    const isAdmin = AppState.user && (AppState.user.role === 'SuperAdmin' || AppState.user.role === 'Operator');
+    editBtn.style.display = isAdmin ? '' : 'none';
+    editBtn.onclick = () => { closeEmployeeProfileModal(); openEditEmployee(e.NIP); };
+  }
+
+  document.getElementById('employee-profile-modal').classList.add('active');
+}
+
+function closeEmployeeProfileModal() {
+  document.getElementById('employee-profile-modal').classList.remove('active');
 }
 
 async function downloadArchiveDocument(fileId, fileName) {
