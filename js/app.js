@@ -182,10 +182,10 @@ function computeStatsFromList(list) {
       gender: { laki, perempuan: total - laki },
       statusKepegawaian: { pns, pppk, p3kPw, nonAsn: Math.max(0, total - pns - pppk - p3kPw) },
       golongan: {
-        iv: list.filter(x => String(x.Golongan_Pangkat_Terakhir).startsWith('IV')).length,
-        iii: list.filter(x => String(x.Golongan_Pangkat_Terakhir).startsWith('III')).length,
-        ii: list.filter(x => String(x.Golongan_Pangkat_Terakhir).startsWith('II')).length,
-        i: list.filter(x => String(x.Golongan_Pangkat_Terakhir).startsWith('I/')).length
+        iv: list.filter(x => /^IV(\/|$)/i.test(String(x.Golongan_Pangkat_Terakhir || '').trim())).length,
+        iii: list.filter(x => /^III(\/|$)/i.test(String(x.Golongan_Pangkat_Terakhir || '').trim())).length,
+        ii: list.filter(x => /^II(\/|$)/i.test(String(x.Golongan_Pangkat_Terakhir || '').trim())).length,
+        i: list.filter(x => /^I(\/|$)/i.test(String(x.Golongan_Pangkat_Terakhir || '').trim())).length
       },
       pendidikan: {
         profesi: list.filter(x => x.Jenjang_Terakhir === 'Profesi').length,
