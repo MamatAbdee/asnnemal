@@ -179,8 +179,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: var(--bg-card-subtle);
-  backdrop-filter: blur(18px);
+  background: var(--bg-card);
   border-right: 1px solid var(--card-border-subtle);
   position: sticky;
   top: 0;
@@ -378,11 +377,11 @@ body {
 
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(18px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-xl);
   padding: 20px;
   box-shadow: var(--shadow-md);
+  contain: layout style;
 }
 
 .stat-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
@@ -433,8 +432,7 @@ body {
    ============================================================================== */
 .right-sidebar {
   padding: 24px 20px;
-  background: var(--bg-card-subtle);
-  backdrop-filter: blur(18px);
+  background: var(--bg-card);
   border-left: 1px solid var(--card-border-subtle);
   position: sticky; top: 0; height: 100vh;
   overflow-y: auto;

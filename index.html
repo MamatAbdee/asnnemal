@@ -30,10 +30,10 @@
 
       <form id="login-form" onsubmit="handleLoginSubmit(event)">
         <div class="input-group">
-          <label for="login-nip">Nomor Induk Pegawai (NIP)</label>
+          <label for="login-nip">Username / Nomor Induk Pegawai (NIP)</label>
           <div class="input-wrap">
             <i class="ri-id-card-line left-ic"></i>
-            <input type="text" id="login-nip" required placeholder="Masukkan 18 digit NIP...">
+            <input type="text" id="login-nip" required placeholder="Masukkan Username atau NIP...">
           </div>
         </div>
         <div class="input-group">
@@ -112,19 +112,14 @@
           <div class="workspace-label">WORK SPACE</div>
           <select id="workspace-unit-select" class="workspace-select" onchange="handleWorkspaceUnitChange(this.value)">
             <option value="SEMUA">Unit: Seluruh RS</option>
-            <option value="Instalasi Rawat Inap">Instalasi Rawat Inap</option>
-            <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
-            <option value="Instalasi Rawat Jalan">Instalasi Rawat Jalan</option>
-            <option value="Kamar Bersalin (VK)">Kamar Bersalin (VK)</option>
-            <option value="Instalasi Farmasi">Instalasi Farmasi</option>
           </select>
         </div>
 
         <div class="user-profile-card">
-          <div class="user-avatar" id="sidebar-user-initials">HM</div>
+          <div class="user-avatar" id="sidebar-user-initials">KK</div>
           <div class="user-info">
-            <div class="user-name" id="sidebar-user-name">dr. Hendra, M.Kes</div>
-            <div class="user-role" id="sidebar-user-role">Kasubag Kepegawaian</div>
+            <div class="user-name" id="sidebar-user-name">Kasubag Keuangan</div>
+            <div class="user-role" id="sidebar-user-role">Kasubag Keuangan</div>
           </div>
           <button class="btn-icon-sm" title="Ganti Tema Gelap/Terang" onclick="toggleTheme()"><i class="ri-contrast-2-line"></i></button>
           <button class="btn-icon-sm" title="Keluar" onclick="handleLogout()"><i class="ri-logout-box-r-line"></i></button>
@@ -375,26 +370,49 @@
             <button class="pill-tab" onclick="filterArchives('Ijazah', this)">Ijazah &amp; Transkrip</button>
             <button class="pill-tab" onclick="filterArchives('RKK', this)">RKK &amp; SPK</button>
           </div>
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Nama Berkas PDF</th>
-                  <th>Pemilik Pegawai &amp; NIP</th>
-                  <th>Kategori Dokumen</th>
-                  <th>Tanggal Unggah</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="archive-table-body"></tbody>
-            </table>
-          </div>
+          <div id="archive-grouped-container" style="display:flex; flex-direction:column; gap:14px;"></div>
         </div>
       </section>
 
       <!-- ================= VIEW 6: PENGATURAN & MIGRASI (SUPER ADMIN) ================= -->
       <section id="view-settings" class="view-section" style="display: none;">
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap:18px;">
+          <!-- Panel 0A: Pejabat Kasubag Keuangan (Pojok Kiri Bawah) -->
+          <div class="glass-panel">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;"><i class="ri-user-star-line" style="color:var(--accent-fuchsia);"></i> Nama Pejabat (Pojok Kiri Bawah)</h3>
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">Atur nama pejabat Kasubag Keuangan yang ditampilkan di pojok kiri bawah sidebar. Dapat diubah setiap saat.</p>
+            <div class="input-group">
+              <label>Nama Pejabat Kasubag Keuangan</label>
+              <input type="text" id="setting-pejabat-nama" class="form-control" placeholder="Contoh: Hj. Yuyun, S.E., M.M.">
+            </div>
+            <div class="input-group">
+              <label>Jabatan</label>
+              <input type="text" id="setting-pejabat-jabatan" class="form-control" value="Kasubag Keuangan" placeholder="Kasubag Keuangan">
+            </div>
+            <button class="btn-primary" onclick="handleSavePejabat()"><i class="ri-save-line"></i> Simpan Nama Pejabat</button>
+          </div>
+
+          <!-- Panel 0B: Ganti Kata Sandi Super Admin -->
+          <div class="glass-panel">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;"><i class="ri-lock-password-line" style="color:var(--accent-amber);"></i> Ganti Kata Sandi Super Admin</h3>
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">Perbarui kata sandi akun Super Admin secara berkala. Sandi disimpan terenkripsi HMAC SHA-256 + salt.</p>
+            <form id="change-password-form" onsubmit="handleChangePassword(event)">
+              <div class="input-group">
+                <label>Kata Sandi Lama</label>
+                <input type="password" id="pass-old" required class="form-control" placeholder="Masukkan kata sandi saat ini">
+              </div>
+              <div class="input-group">
+                <label>Kata Sandi Baru (Min. 6 Karakter)</label>
+                <input type="password" id="pass-new" required minlength="6" class="form-control" placeholder="Masukkan kata sandi baru">
+              </div>
+              <div class="input-group">
+                <label>Konfirmasi Kata Sandi Baru</label>
+                <input type="password" id="pass-confirm" required minlength="6" class="form-control" placeholder="Ulangi kata sandi baru">
+              </div>
+              <button type="submit" class="btn-primary" style="background:var(--grad-fuchsia);"><i class="ri-key-line"></i> Simpan Kata Sandi Baru</button>
+            </form>
+          </div>
+
           <!-- Panel 1: Rahasia Script Properties -->
           <div class="glass-panel">
             <h3 style="font-size:16px; font-weight:800; margin-bottom:6px;"><i class="ri-key-2-line" style="color:var(--primary-violet);"></i> Rahasia Script Properties (R5)</h3>
@@ -463,11 +481,6 @@
           <div class="wa-feed-items" id="wa-feed-list-container"></div>
         </div>
       </div>
-
-      <!-- Bottom Gradient CTA -->
-      <button class="btn-right-cta admin-only" onclick="openAddEmployeeModal()">
-        <i class="ri-add-line" style="font-size:18px;"></i> + Entri Usulan Baru
-      </button>
     </aside>
   </div>
 

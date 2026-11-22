@@ -248,6 +248,16 @@ function handleMockApi(action, payload) {
     } else if (action === 'deleteAllEmployees') {
       MockDB.employees.length = 0;
       resolve({ success: true, message: 'Seluruh data pegawai berhasil dihapus.' });
+    } else if (action === 'deleteArchive') {
+      const idx = MockDB.archives.findIndex(a => String(a.ID_Dokumen) === String(payload.docId) || String(a.Drive_File_ID) === String(payload.docId));
+      if (idx > -1) MockDB.archives.splice(idx, 1);
+      resolve({ success: true, message: 'Berkas PDF berhasil dihapus.' });
+    } else if (action === 'savePejabat') {
+      const pj = { nama: payload.nama, jabatan: payload.jabatan || 'Kasubag Keuangan' };
+      localStorage.setItem('e_asn_pejabat', JSON.stringify(pj));
+      resolve({ success: true, message: 'Nama pejabat berhasil diperbarui!', pejabat: pj });
+    } else if (action === 'changePassword') {
+      resolve({ success: true, message: 'Kata sandi Super Admin berhasil diperbarui (Mode Demo).' });
     } else if (action === 'getArchiveFile') {
       const rec = MockDB.archives.find(a => String(a.Drive_File_ID) === String(payload.fileId) || String(a.ID_Dokumen) === String(payload.fileId));
       const b64 = (rec && rec.base64) ? rec.base64 : buildSamplePdfBase64((rec && rec.Nama_Berkas) || 'Dokumen_LAFKI.pdf');
@@ -337,7 +347,7 @@ async function handleLoginSubmit(e) {
 
 function demoLogin(role) {
   const presets = {
-    SuperAdmin: { nip: '197508102000031001', nama: 'dr. Hendra, M.Kes', role: 'SuperAdmin', unit: 'Subbagian Kepegawaian' },
+    SuperAdmin: { nip: 'yuyun', nama: 'Kasubag Keuangan', role: 'SuperAdmin', unit: 'Subbagian Keuangan' },
     Operator: { nip: '198812152011012003', nama: 'Siti Nurhaliza, A.Md.Keb', role: 'Operator', unit: 'Subbagian Kepegawaian' },
     Pegawai: { nip: '198204152008011005', nama: 'dr. Budi Santoso, Sp.PD', role: 'Pegawai', unit: 'Instalasi Rawat Inap' }
   };
@@ -360,16 +370,53 @@ function handleLogout() {
   showToast('Anda telah keluar dari sesi E-ASN Nemal.', 'info');
 }
 
+function renderPejabatSidebar() {
+  let pj = (AppState.bootData && AppState.bootData.pejabat) || null;
+  if (!pj || !pj.nama) {
+    try { pj = JSON.parse(localStorage.getItem('e_asn_pejabat') || 'null'); } catch (e) {}
+  }
+  const nama = (pj && pj.nama) || (AppState.user && AppState.user.nama) || 'Kasubag Keuangan';
+  const jabatan = (pj && pj.jabatan) || 'Kasubag Keuangan';
+
+  const nameEl = document.getElementById('sidebar-user-name');
+  const roleEl = document.getElementById('sidebar-user-role');
+  const initEl = document.getElementById('sidebar-user-initials');
+  if (nameEl) nameEl.textContent = nama;
+  if (roleEl) roleEl.textContent = jabatan;
+  if (initEl) initEl.textContent = getInitials(nama);
+
+  const inNama = document.getElementById('setting-pejabat-nama');
+  const inJab = document.getElementById('setting-pejabat-jabatan');
+  if (inNama && pj && pj.nama && !inNama.value) inNama.value = pj.nama;
+  if (inJab && pj && pj.jabatan) inJab.value = pj.jabatan;
+}
+
+function populateWorkspaceUnits(allEmps) {
+  const sel = document.getElementById('workspace-unit-select');
+  if (!sel) return;
+  const units = Array.from(new Set(
+    (allEmps || [])
+      .map(e => String(e.Unit_Kerja || '').trim())
+      .filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b, 'id'));
+
+  const prev = AppState.unitFilter;
+  sel.innerHTML = '<option value="SEMUA">Unit: Seluruh RS</option>' +
+    units.map(u => `<option value="${u.replace(/"/g, '&quot;')}">${u}</option>`).join('');
+
+  if (prev !== 'SEMUA' && units.includes(prev)) {
+    sel.value = prev;
+  } else {
+    AppState.unitFilter = 'SEMUA';
+    sel.value = 'SEMUA';
+  }
+}
+
 function enterApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-container').style.display = 'grid';
 
-  // Set user profile sidebar
-  document.getElementById('sidebar-user-name').textContent = AppState.user.nama;
-  document.getElementById('sidebar-user-role').textContent =
-    AppState.user.role === 'SuperAdmin' ? 'Kasubag Kepegawaian' :
-    AppState.user.role === 'Operator' ? 'Admin Operator' : 'Pegawai ASN';
-  document.getElementById('sidebar-user-initials').textContent = getInitials(AppState.user.nama);
+  renderPejabatSidebar();
 
   // Terapkan RBAC pada elemen admin-only & superadmin-only
   const isAdmin = AppState.user.role === 'SuperAdmin' || AppState.user.role === 'Operator';
@@ -397,7 +444,7 @@ function enterApp() {
 }
 
 // ==============================================================================
-// 4. SWR DATA LOADER & ZERO-DELAY RENDERING
+// 4. SWR DATA LOADER & ZERO-DELAY RENDERING (LAZY VIEW RENDER)
 // ==============================================================================
 function readSwrCache() {
   try {
@@ -428,6 +475,9 @@ async function loadBootData(withSpinner = false) {
 
   if (res && res.success) {
     AppState.bootData = res;
+    if (res.pejabat && res.pejabat.nama) {
+      localStorage.setItem('e_asn_pejabat', JSON.stringify(res.pejabat));
+    }
     writeSwrCache(res);
     renderAllViews();
   } else if (res && /sesi/i.test(res.message || '')) {
@@ -435,28 +485,55 @@ async function loadBootData(withSpinner = false) {
   }
 }
 
-function getFilteredEmployees() {
+function getAllValidEmployees() {
   const emps = (AppState.bootData && AppState.bootData.employees) || [];
+  // Filter ketat: hanya pegawai yang benar-benar memiliki NIP & Nama Lengkap (Fix #9)
+  return emps.filter(e => String(e.NIP || '').trim() !== '' && String(e.Nama_Lengkap || '').trim() !== '');
+}
+
+function getFilteredEmployees() {
+  const emps = getAllValidEmployees();
   if (AppState.unitFilter === 'SEMUA') return emps;
-  return emps.filter(e => String(e.Unit_Kerja || '').toLowerCase().includes(AppState.unitFilter.toLowerCase()));
+  return emps.filter(e => String(e.Unit_Kerja || '').trim().toLowerCase() === AppState.unitFilter.trim().toLowerCase());
 }
 
 function renderAllViews() {
   if (!AppState.bootData) return;
+  const allEmps = getAllValidEmployees();
+  populateWorkspaceUnits(allEmps);
+  renderPejabatSidebar();
+
   const emps = getFilteredEmployees();
   const { stats, alerts } = computeStatsFromList(emps);
 
   renderTopbarBadges(stats);
-  renderHeroCards(stats, alerts);
-  renderDashboard2x2(stats);
-  renderRecentVerify(emps);
   renderPriorityTasks(alerts);
   renderWaFeed();
-  applyDirectoryFilters();
-  renderMonitoringTable(AppState.monTab);
-  renderKredensialTable();
-  renderArchivesTable();
-  populateUploadEmpSelect(emps);
+  populateUploadEmpSelect(allEmps);
+  renderActiveViewOnly(emps, stats, alerts);
+}
+
+function renderActiveViewOnly(empsOpt, statsOpt, alertsOpt) {
+  if (!AppState.bootData) return;
+  const emps = empsOpt || getFilteredEmployees();
+  const computed = (statsOpt && alertsOpt) ? { stats: statsOpt, alerts: alertsOpt } : computeStatsFromList(emps);
+  const v = AppState.currentView;
+
+  if (v === 'dashboard') {
+    renderHeroCards(computed.stats, computed.alerts);
+    renderDashboard2x2(computed.stats);
+    renderRecentVerify(emps);
+  } else if (v === 'directory') {
+    applyDirectoryFilters();
+  } else if (v === 'monitoring') {
+    renderMonitoringTable(AppState.monTab);
+  } else if (v === 'kredensial') {
+    renderKredensialTable();
+  } else if (v === 'arsip') {
+    renderArchivesTable();
+  } else if (v === 'settings') {
+    loadSettingsStatus();
+  }
 }
 
 function renderTopbarBadges(stats) {
@@ -516,13 +593,14 @@ function renderAvatarStack(list) {
 }
 
 function renderDashboard2x2(stats) {
+  const hasData = stats.total > 0;
   const t = Math.max(1, stats.total);
-  const pL = Math.round((stats.gender.laki / t) * 100);
-  const pP = 100 - pL;
-  const pPns = Math.round((stats.statusKepegawaian.pns / t) * 100);
-  const pPppk = Math.round((stats.statusKepegawaian.pppk / t) * 100);
-  const pP3kPw = Math.round(((stats.statusKepegawaian.p3kPw || 0) / t) * 100);
-  const pNon = Math.max(0, 100 - pPns - pPppk - pP3kPw);
+  const pL = hasData ? Math.round((stats.gender.laki / t) * 100) : 0;
+  const pP = hasData ? (100 - pL) : 0;
+  const pPns = hasData ? Math.round((stats.statusKepegawaian.pns / t) * 100) : 0;
+  const pPppk = hasData ? Math.round((stats.statusKepegawaian.pppk / t) * 100) : 0;
+  const pP3kPw = hasData ? Math.round(((stats.statusKepegawaian.p3kPw || 0) / t) * 100) : 0;
+  const pNon = hasData ? Math.max(0, 100 - pPns - pPppk - pP3kPw) : 0;
 
   document.getElementById('dashboard-stats-2x2').innerHTML = `
     <!-- Card 1: Gender -->
@@ -807,32 +885,127 @@ function filterArchives(cat, btn) {
 }
 
 function renderArchivesTable() {
-  const tbody = document.getElementById('archive-table-body');
-  if (!tbody) return;
-  let list = (AppState.bootData && AppState.bootData.archives) || [];
+  const container = document.getElementById('archive-grouped-container');
+  if (!container) return;
+
+  const allEmps = getAllValidEmployees();
+  const empByNip = {};
+  allEmps.forEach(e => { empByNip[String(e.NIP).trim()] = e; });
+
+  let list = ((AppState.bootData && AppState.bootData.archives) || []).filter(a =>
+    String(a.ID_Dokumen || '').trim() !== '' || String(a.Nama_Berkas || '').trim() !== ''
+  );
+
+  // Filter berdasarkan Work Space Unit Kerja jika aktif
+  if (AppState.unitFilter !== 'SEMUA') {
+    const unitLower = AppState.unitFilter.trim().toLowerCase();
+    list = list.filter(a => {
+      const owner = empByNip[String(a.NIP || '').trim()];
+      return owner && String(owner.Unit_Kerja || '').trim().toLowerCase() === unitLower;
+    });
+  }
+
+  // Filter berdasarkan kategori pill tab
   if (AppState.archiveFilter !== 'ALL') {
     list = list.filter(a => String(a.Kategori_Dokumen || '').toUpperCase().includes(AppState.archiveFilter.toUpperCase()));
   }
+
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Belum ada berkas PDF pada kategori ini.</td></tr>';
+    container.innerHTML = '<div style="text-align:center; padding:32px; color:var(--text-secondary);">Belum ada berkas PDF pada kategori ini.</div>';
     return;
   }
-  tbody.innerHTML = list.map(a => {
-    const fId = a.Drive_File_ID || a.ID_Dokumen;
+
+  // Kelompokkan berkas PDF berdasarkan pemilik (NIP) agar tidak tercampur (Poin #8)
+  const groups = {};
+  const groupOrder = [];
+  list.forEach(a => {
+    const key = String(a.NIP || 'LAINNYA').trim();
+    if (!groups[key]) {
+      groups[key] = [];
+      groupOrder.push(key);
+    }
+    groups[key].push(a);
+  });
+
+  const isAdmin = AppState.user && (AppState.user.role === 'SuperAdmin' || AppState.user.role === 'Operator');
+
+  container.innerHTML = groupOrder.map(nip => {
+    const files = groups[nip];
+    const owner = empByNip[nip];
+    const ownerName = owner ? formatFullName(owner) : (files[0].Nama_Pemilik || nip);
+    const ownerUnit = owner ? (owner.Unit_Kerja || 'RSUD Nene Mallomo') : 'Arsip Pegawai';
+    const ownerGol = owner ? (owner.Golongan_Pangkat_Terakhir || '-') : '';
+
+    const filesHtml = files.map(a => {
+      const fId = a.Drive_File_ID || a.ID_Dokumen;
+      const docId = a.ID_Dokumen || a.Drive_File_ID;
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:12px; border:1px solid var(--card-border-subtle); background:var(--bg-card); flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+            <i class="ri-file-pdf-2-line" style="color:#ef4444; font-size:20px; flex-shrink:0;"></i>
+            <div style="min-width:0;">
+              <div style="font-size:12.5px; font-weight:700; word-break:break-word;">${a.Nama_Berkas}</div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">
+                <span class="badge-status info" style="padding:2px 8px; font-size:10px;">${a.Kategori_Dokumen}</span>
+                <span style="margin-left:6px;">Diunggah: ${String(a.Tanggal_Unggah || '-').slice(0, 10)}</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn-secondary" style="padding:5px 10px; font-size:11.5px;" onclick="viewArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-eye-line"></i> Lihat</button>
+            <button class="btn-primary" style="padding:5px 10px; font-size:11.5px;" onclick="downloadArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-download-line"></i> Unduh</button>
+            ${isAdmin ? `<button class="btn-secondary" style="padding:5px 10px; font-size:11.5px; color:#ef4444; border-color:#fecaca;" title="Hapus Berkas PDF" onclick="handleDeleteArchive('${escapeQuotes(docId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-delete-bin-line"></i> Hapus</button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
     return `
-    <tr>
-      <td><i class="ri-file-pdf-2-line" style="color:#ef4444; font-size:16px; vertical-align:middle;"></i> <strong>${a.Nama_Berkas}</strong><div style="font-size:10.5px; color:var(--text-secondary);">Drive ID: #${a.ID_Dokumen}</div></td>
-      <td>${a.Nama_Pemilik || a.NIP}<div style="font-size:11px; color:var(--text-secondary);">${a.NIP}</div></td>
-      <td><span class="badge-status info">${a.Kategori_Dokumen}</span></td>
-      <td>${String(a.Tanggal_Unggah || '').slice(0, 10)}</td>
-      <td>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="btn-secondary" style="padding:5px 10px; font-size:11.5px;" onclick="viewArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-eye-line"></i> Lihat</button>
-          <button class="btn-primary" style="padding:5px 10px; font-size:11.5px;" onclick="downloadArchiveDocument('${escapeQuotes(fId)}', '${escapeQuotes(a.Nama_Berkas)}')"><i class="ri-download-line"></i> Unduh</button>
+      <div style="border:1px solid var(--card-border-subtle); border-radius:18px; padding:16px; background:var(--bg-card-subtle);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px dashed var(--card-border-subtle); flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="${owner ? `openEmployeeProfileModal('${escapeQuotes(nip)}')` : ''}">
+            <div class="wa-feed-thumb" style="width:38px; height:38px; font-size:13px;">${getInitials(ownerName)}</div>
+            <div>
+              <div style="font-size:14px; font-weight:800; color:var(--text-primary);">${ownerName}</div>
+              <div style="font-size:11.5px; color:var(--text-secondary);">NIP: ${nip} • ${ownerUnit}${ownerGol ? ' • ' + ownerGol : ''}</div>
+            </div>
+          </div>
+          <span class="badge-status active"><i class="ri-folder-2-line"></i> ${files.length} Berkas PDF</span>
         </div>
-      </td>
-    </tr>`;
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${filesHtml}
+        </div>
+      </div>`;
   }).join('');
+}
+
+async function handleDeleteArchive(docId, fileName) {
+  if (!AppState.user || (AppState.user.role !== 'SuperAdmin' && AppState.user.role !== 'Operator')) {
+    showToast('Hanya Admin atau Super Admin yang dapat menghapus berkas PDF.', 'error');
+    return;
+  }
+  if (!confirm(`Yakin ingin menghapus berkas PDF:\n${fileName}?`)) return;
+
+  // Optimistic UI: langsung hilangkan dari tampilan (0ms lag)
+  const prevArchives = (AppState.bootData && AppState.bootData.archives) ? [...AppState.bootData.archives] : [];
+  if (AppState.bootData && Array.isArray(AppState.bootData.archives)) {
+    AppState.bootData.archives = AppState.bootData.archives.filter(a =>
+      String(a.ID_Dokumen) !== String(docId) && String(a.Drive_File_ID) !== String(docId)
+    );
+    document.getElementById('arsip-total-val').textContent = AppState.bootData.archives.length;
+    renderArchivesTable();
+  }
+
+  const res = await api('deleteArchive', { docId });
+  if (res.success) {
+    clearSwrCache();
+    writeSwrCache(AppState.bootData);
+    showToast(res.message || 'Berkas PDF berhasil dihapus.', 'success');
+  } else {
+    // Rollback jika server gagal
+    if (AppState.bootData) AppState.bootData.archives = prevArchives;
+    renderArchivesTable();
+    showToast(res.message || 'Gagal menghapus berkas PDF.', 'error');
+  }
 }
 
 // ==============================================================================
@@ -884,14 +1057,22 @@ async function handleDeleteEmployee(nip, nama) {
     return;
   }
   if (!confirm(`Yakin ingin menghapus data pegawai:\n${nama} (NIP: ${nip})?`)) return;
-  showLoader(true);
+
+  // Optimistic UI: langsung hapus dari memori & render (0ms)
+  const prevEmps = (AppState.bootData && AppState.bootData.employees) ? [...AppState.bootData.employees] : [];
+  if (AppState.bootData && Array.isArray(AppState.bootData.employees)) {
+    AppState.bootData.employees = AppState.bootData.employees.filter(e => String(e.NIP).trim() !== String(nip).trim());
+    renderAllViews();
+  }
+
   const res = await api('deleteEmployee', { nip });
-  showLoader(false);
   if (res.success) {
     clearSwrCache();
+    writeSwrCache(AppState.bootData);
     showToast(res.message || 'Pegawai berhasil dihapus.', 'success');
-    await loadBootData(false);
   } else {
+    if (AppState.bootData) AppState.bootData.employees = prevEmps;
+    renderAllViews();
     showToast(res.message || 'Gagal menghapus pegawai.', 'error');
   }
 }
@@ -906,14 +1087,24 @@ async function handleDeleteAllEmployees() {
     showToast('Penghapusan seluruh pegawai dibatalkan.', 'info');
     return;
   }
+
+  // Optimistic UI: kosongkan tampilan langsung (0ms)
+  const prevEmps = (AppState.bootData && AppState.bootData.employees) ? [...AppState.bootData.employees] : [];
+  if (AppState.bootData) {
+    AppState.bootData.employees = [];
+    renderAllViews();
+  }
+
   showLoader(true);
   const res = await api('deleteAllEmployees', {});
   showLoader(false);
   if (res.success) {
     clearSwrCache();
+    writeSwrCache(AppState.bootData);
     showToast(res.message || 'Seluruh data pegawai berhasil dihapus.', 'success');
-    await loadBootData(false);
   } else {
+    if (AppState.bootData) AppState.bootData.employees = prevEmps;
+    renderAllViews();
     showToast(res.message || 'Gagal menghapus seluruh pegawai.', 'error');
   }
 }
@@ -1329,6 +1520,55 @@ async function handleUploadCredentialSubmit(ev) {
   }
 }
 
+async function handleSavePejabat() {
+  const nama = document.getElementById('setting-pejabat-nama').value.trim();
+  const jabatan = document.getElementById('setting-pejabat-jabatan').value.trim() || 'Kasubag Keuangan';
+  if (!nama) {
+    showToast('Nama pejabat Kasubag Keuangan wajib diisi!', 'error');
+    return;
+  }
+  showLoader(true);
+  const res = await api('savePejabat', { nama, jabatan });
+  showLoader(false);
+  if (res.success) {
+    const pj = res.pejabat || { nama, jabatan };
+    if (AppState.bootData) AppState.bootData.pejabat = pj;
+    localStorage.setItem('e_asn_pejabat', JSON.stringify(pj));
+    clearSwrCache();
+    writeSwrCache(AppState.bootData);
+    renderPejabatSidebar();
+    showToast(res.message || 'Nama pejabat berhasil diperbarui!', 'success');
+  } else {
+    showToast(res.message || 'Gagal menyimpan nama pejabat.', 'error');
+  }
+}
+
+async function handleChangePassword(ev) {
+  ev.preventDefault();
+  const oldPassword = document.getElementById('pass-old').value;
+  const newPassword = document.getElementById('pass-new').value;
+  const confirmPassword = document.getElementById('pass-confirm').value;
+
+  if (newPassword.length < 6) {
+    showToast('Kata sandi baru minimal 6 karakter!', 'error');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    showToast('Konfirmasi kata sandi baru tidak cocok!', 'error');
+    return;
+  }
+
+  showLoader(true);
+  const res = await api('changePassword', { oldPassword, newPassword });
+  showLoader(false);
+  if (res.success) {
+    document.getElementById('change-password-form').reset();
+    showToast(res.message || 'Kata sandi Super Admin berhasil diperbarui!', 'success');
+  } else {
+    showToast(res.message || 'Gagal mengubah kata sandi.', 'error');
+  }
+}
+
 async function handleSaveWaToken() {
   const val = document.getElementById('setting-wa-token').value.trim();
   showLoader(true);
@@ -1346,11 +1586,19 @@ async function handleSaveWaToken() {
 async function loadSettingsStatus() {
   if (!AppState.user || AppState.user.role !== 'SuperAdmin') return;
   const res = await api('getSettingsStatus');
-  if (res.success && res.secrets && res.secrets.WA_GATEWAY_TOKEN) {
-    const st = res.secrets.WA_GATEWAY_TOKEN;
-    document.getElementById('setting-wa-status').textContent = st.ada
-      ? `Status: Token tersimpan aman (${st.tersamar})`
-      : 'Status: Belum disetel (Mode Direct Link wa.me aktif)';
+  if (res.success) {
+    if (res.secrets && res.secrets.WA_GATEWAY_TOKEN) {
+      const st = res.secrets.WA_GATEWAY_TOKEN;
+      document.getElementById('setting-wa-status').textContent = st.ada
+        ? `Status: Token tersimpan aman (${st.tersamar})`
+        : 'Status: Belum disetel (Mode Direct Link wa.me aktif)';
+    }
+    if (res.pejabat) {
+      const inNama = document.getElementById('setting-pejabat-nama');
+      const inJab = document.getElementById('setting-pejabat-jabatan');
+      if (inNama && res.pejabat.nama) inNama.value = res.pejabat.nama;
+      if (inJab && res.pejabat.jabatan) inJab.value = res.pejabat.jabatan;
+    }
   }
 }
 
@@ -1365,15 +1613,17 @@ async function handleRunMigration(dryRun) {
     out.style.display = 'block';
     out.textContent = JSON.stringify(res.result, null, 2);
     showToast(dryRun ? 'Simulasi Dry-Run selesai!' : 'Delta-Sync migrasi berhasil!', 'success');
-    if (!dryRun) loadBootData(false);
+    if (!dryRun) { clearSwrCache(); loadBootData(false); }
   } else {
     showToast(res.message || 'Migrasi gagal.', 'error');
   }
 }
 
 // ==============================================================================
-// 8. ROUTING, EXPORT EXCEL & HELPERS
+// 8. ROUTING, EXPORT EXCEL & HELPERS (DEBOUNCE & LAZY RENDER)
 // ==============================================================================
+let _searchTimer = null;
+
 function setupGlobalListeners() {
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(el => {
     el.addEventListener('click', () => {
@@ -1382,8 +1632,11 @@ function setupGlobalListeners() {
   });
 
   document.getElementById('topbar-search-input')?.addEventListener('input', () => {
-    if (AppState.currentView !== 'directory') switchView('directory');
-    applyDirectoryFilters();
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+      if (AppState.currentView !== 'directory') switchView('directory');
+      else applyDirectoryFilters();
+    }, 150);
   });
 
   document.querySelectorAll('.date-pill-item').forEach(el => {
@@ -1420,7 +1673,7 @@ function switchView(viewName) {
     n.classList.toggle('active', n.dataset.view === viewName);
   });
 
-  if (viewName === 'settings') loadSettingsStatus();
+  renderActiveViewOnly();
 }
 
 function handleWorkspaceUnitChange(unit) {
