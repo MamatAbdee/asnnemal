@@ -342,10 +342,10 @@
               <div data-open-alert="kgb" class="cursor-pointer rounded-[24px] grad-violet pattern-dots text-white p-5 shadow-glow-violet flex flex-col justify-between min-h-[210px] hover:-translate-y-0.5 transition">
                 <div class="flex items-center justify-between text-xs font-semibold text-white/85">
                   <span id="heroDate1">-</span>
-                  <span class="px-2 py-0.5 rounded-full glass-frosted text-[10px] font-bold">KGB</span>
+                  <span class="px-2 py-0.5 rounded-full glass-frosted text-[10px] font-bold">KGB H-60</span>
                 </div>
                 <div class="my-3">
-                  <h3 class="text-base font-extrabold leading-snug">Kenaikan Gaji Berkala (KGB) Bulan Ini</h3>
+                  <h3 class="text-base font-extrabold leading-snug">Kenaikan Gaji Berkala (KGB) 60 Hari Ke Depan</h3>
                   <div class="mt-3 flex items-center justify-between text-[11px] font-semibold text-white/90">
                     <span>Total Jatuh Tempo</span>
                     <span id="heroKgbPct">0%</span>
@@ -567,7 +567,7 @@
           <section id="view-kgbkp" class="hidden space-y-4 animate-in">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="flex items-center gap-2">
-                <button type="button" data-kgb-tab="kgb" class="kgb-tab-btn px-4 py-2 rounded-full text-xs font-bold bg-brand-violet text-white shadow-sm transition">KGB Bulan Ini</button>
+                <button type="button" data-kgb-tab="kgb" class="kgb-tab-btn px-4 py-2 rounded-full text-xs font-bold bg-brand-violet text-white shadow-sm transition">KGB (60 Hari Ke Depan)</button>
                 <button type="button" data-kgb-tab="kp" class="kgb-tab-btn px-4 py-2 rounded-full text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition">KP 3 Bulan Depan</button>
               </div>
               <button type="button" id="exportKgbKpBtn" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">
@@ -666,26 +666,16 @@
                 <option value="Terverifikasi">Terverifikasi</option>
                 <option value="Ditolak">Ditolak</option>
               </select>
-              <input id="filterArsipSearch" type="search" placeholder="Filter NIP / nama berkas..."
+              <input id="filterArsipSearch" type="search" placeholder="Filter nama pegawai / NIP / nama berkas..."
                 class="rounded-xl border-slate-200 text-xs py-2 px-3" />
             </div>
 
-            <div class="bg-white rounded-[22px] border border-slate-200/70 overflow-hidden">
-              <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[780px]">
-                  <thead>
-                    <tr class="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                      <th class="py-3 px-4">Nama Berkas &amp; Kategori</th>
-                      <th class="py-3 px-3">Pegawai (NIP)</th>
-                      <th class="py-3 px-3">Tanggal Unggah</th>
-                      <th class="py-3 px-3">Status Verifikasi</th>
-                      <th class="py-3 px-4 text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody id="arsipTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
-                </table>
-              </div>
+            <div class="flex items-center justify-end gap-2">
+              <button type="button" id="arsipExpandAllBtn" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50">Buka Semua Folder</button>
+              <button type="button" id="arsipCollapseAllBtn" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50">Tutup Semua</button>
             </div>
+
+            <div id="arsipGroupedContainer" class="space-y-3"></div>
           </section>
 
           <!-- ==================== VIEW 6: PENGATURAN ==================== -->
@@ -1218,6 +1208,10 @@
       <div class="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-gradient-to-r from-violet-50/60 to-sky-50/40 no-print">
         <h3 class="text-base font-extrabold text-slate-900">Profil Lengkap Pegawai</h3>
         <div class="flex items-center gap-2">
+          <button type="button" id="toggleChecklistBtn" class="px-3 py-1.5 rounded-xl bg-violet-50 border border-violet-200 text-xs font-bold text-brand-violetDark hover:bg-violet-100 flex items-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+            <span id="toggleChecklistLabel">Ceklist Berkas</span>
+          </button>
           <button type="button" id="printDetailBtn" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">Cetak</button>
           <button type="button" data-close-modal="detailModal" class="w-8 h-8 rounded-full hover:bg-white text-slate-500 font-bold text-lg">&times;</button>
         </div>
@@ -1236,7 +1230,7 @@
         <button type="button" data-close-modal="alertCenterModal" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 font-bold text-lg">&times;</button>
       </div>
       <div class="px-6 pt-3 pb-2 flex flex-wrap gap-2 border-b border-slate-100" id="alertModalTabs">
-        <button type="button" data-am-tab="kgb" class="am-tab-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-brand-violet text-white">KGB Bulan Ini (0)</button>
+        <button type="button" data-am-tab="kgb" class="am-tab-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-brand-violet text-white">KGB H-60 (0)</button>
         <button type="button" data-am-tab="kp" class="am-tab-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">KP 3 Bulan Depan (0)</button>
         <button type="button" data-am-tab="str" class="am-tab-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">STR/SIP Perlu Aksi (0)</button>
       </div>
@@ -1383,6 +1377,17 @@
       'IV/a', 'IV/b', 'IV/c', 'IV/d', 'IV/e'
     ];
     const GOLONGAN_PPPK = ['V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    const KGB_LEAD_DAYS = 60;
+    const CHECKLIST_KATEGORI = [
+      { key: 'STR', label: 'STR (Surat Tanda Registrasi)' },
+      { key: 'SIP', label: 'SIP (Surat Izin Praktik)' },
+      { key: 'RKK/SPK', label: 'RKK / SPK Kredensial' },
+      { key: 'Ijazah', label: 'Ijazah & Transkrip' },
+      { key: 'SK CPNS/PNS/PPPK', label: 'SK CPNS / PNS / PPPK' },
+      { key: 'SK KGB', label: 'SK KGB' },
+      { key: 'SK Pangkat', label: 'SK Kenaikan Pangkat' },
+      { key: 'Sertifikat Diklat', label: 'Sertifikat Pelatihan / Diklat' }
+    ];
     const MAX_FILE_BYTES = 6 * 1024 * 1024;
     const STORAGE_API_KEY = 'easn_nemal_api_url';
     const STORAGE_AUTH_KEY = 'easn_nemal_auth_v2';
@@ -1402,7 +1407,9 @@
       alertTab: 'kgb',
       empModalTab: 0,
       calOffsetDays: 0,
-      previewBlobUrl: null
+      previewBlobUrl: null,
+      arsipCollapsed: Object.create(null),
+      detailEmpNip: ''
     };
 
     // ========================================================================
@@ -1713,14 +1720,21 @@
       ).join('') + (list.length > 3 ? '<span class="w-7 h-7 rounded-full border-2 border-white/80 bg-slate-900/35 text-white text-[10px] font-extrabold flex items-center justify-center">+' + (list.length - 3) + '</span>' : '');
     }
 
+    function isKgbDue(emp, today) {
+      const d = parseDMY(emp && emp.Jadwal_KGB_Berikutnya);
+      if (!d) return false;
+      const diff = diffDaysDMY(d, today);
+      return diff >= -7 && diff <= KGB_LEAD_DAYS;
+    }
+
     function strSipStatusBadge(status, sisaHari, labelPrefix) {
       const p = labelPrefix ? labelPrefix + ': ' : '';
-      if (status === 'SEUMUR_HIDUP') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold">' + p + 'Seumur Hidup</span>';
-      if (status === 'KEDALUWARSA') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-[10px] font-extrabold">' + p + 'Habis (' + Math.abs(sisaHari) + ' hr lalu)</span>';
-      if (status === 'KRITIS') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-extrabold">' + p + 'Kritis (H-' + sisaHari + ')</span>';
-      if (status === 'PERINGATAN') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold">' + p + 'H-' + sisaHari + '</span>';
-      if (status === 'AKTIF') return '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">' + p + 'Aktif (' + sisaHari + ' hr)</span>';
-      return '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold">' + p + 'Belum Diisi</span>';
+      if (status === 'SEUMUR_HIDUP') return '<span class="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold">' + p + 'Seumur Hidup</span>';
+      if (status === 'KEDALUWARSA') return '<span class="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-[10px] font-extrabold">' + p + 'Habis (' + Math.abs(sisaHari) + ' hr lalu)</span>';
+      if (status === 'KRITIS') return '<span class="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-extrabold">' + p + 'Kritis (H-' + sisaHari + ')</span>';
+      if (status === 'PERINGATAN') return '<span class="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold">' + p + 'H-' + sisaHari + '</span>';
+      if (status === 'AKTIF') return '<span class="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">' + p + 'Aktif (' + sisaHari + ' hr)</span>';
+      return '<span class="inline-flex items-center whitespace-nowrap px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold">' + p + 'Belum Diisi</span>';
     }
 
     function renderDashboard() {
@@ -1729,10 +1743,7 @@
       const today = todayLocalDMY();
       const todayStr = state.boot.today || formatDMY(today);
 
-      const kgbList = emps.filter(e => {
-        const d = parseDMY(e.Jadwal_KGB_Berikutnya);
-        return d && d.y === today.y && d.m === today.m;
-      });
+      const kgbList = emps.filter(e => isKgbDue(e, today));
       const kpList = emps.filter(e => {
         const d = parseDMY(e.Jadwal_KP_Berikutnya);
         if (!d) return false;
@@ -2001,11 +2012,13 @@
               </td>
               <td class="py-3.5 px-4 text-right whitespace-nowrap">
                 <div class="inline-flex items-center gap-1">
-                  <button type="button" data-action="detail-emp" data-nip="${esc(e.NIP)}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px]">Detail</button>
-                  ${isStaff ? '<button type="button" data-action="edit-emp" data-nip="' + esc(e.NIP) + '" class="px-2.5 py-1.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-brand-violetDark font-bold text-[11px]">Ubah</button>' : ''}
-                  ${isStaff && e.No_HP_WA ? '<button type="button" data-action="wa-emp" data-nip="' + esc(e.NIP) + '" data-wa-type="UMUM" class="px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px]">WA</button>' : ''}
-                  ${isSuper ? '<button type="button" data-action="reset-pass" data-nip="' + esc(e.NIP) + '" class="px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-[11px]" title="Reset Sandi">🔑</button>' : ''}
-                  ${isSuper ? '<button type="button" data-action="delete-emp" data-nip="' + esc(e.NIP) + '" class="px-2 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold text-[11px]">Hapus</button>' : ''}
+                  <button type="button" data-action="detail-emp" data-nip="${esc(e.NIP)}" title="Detail Profil" aria-label="Detail Profil" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 inline-flex items-center justify-center transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  </button>
+                  ${isStaff ? '<button type="button" data-action="edit-emp" data-nip="' + esc(e.NIP) + '" title="Ubah Pegawai" aria-label="Ubah Pegawai" class="w-8 h-8 rounded-lg bg-violet-50 hover:bg-violet-100 text-brand-violetDark inline-flex items-center justify-center transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>' : ''}
+                  ${isStaff && e.No_HP_WA ? '<button type="button" data-action="wa-emp" data-nip="' + esc(e.NIP) + '" data-wa-type="UMUM" title="Kirim WhatsApp" aria-label="Kirim WhatsApp" class="w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 inline-flex items-center justify-center transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></button>' : ''}
+                  ${isSuper ? '<button type="button" data-action="reset-pass" data-nip="' + esc(e.NIP) + '" title="Reset Kata Sandi" aria-label="Reset Kata Sandi" class="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 inline-flex items-center justify-center transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg></button>' : ''}
+                  ${isSuper ? '<button type="button" data-action="delete-emp" data-nip="' + esc(e.NIP) + '" title="Hapus Pegawai" aria-label="Hapus Pegawai" class="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 inline-flex items-center justify-center transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>' : ''}
                 </div>
               </td>
             </tr>
@@ -2029,9 +2042,9 @@
       const today = todayLocalDMY();
       const isKgb = state.kgbTab === 'kgb';
       const list = emps.filter(e => {
-        const d = parseDMY(isKgb ? e.Jadwal_KGB_Berikutnya : e.Jadwal_KP_Berikutnya);
+        if (isKgb) return isKgbDue(e, today);
+        const d = parseDMY(e.Jadwal_KP_Berikutnya);
         if (!d) return false;
-        if (isKgb) return d.y === today.y && d.m === today.m;
         const diff = diffDaysDMY(d, today);
         return diff >= -7 && diff <= 95;
       });
@@ -2043,7 +2056,7 @@
       });
 
       if (!list.length) {
-        $('kgbKpListContainer').innerHTML = '<div class="bg-white rounded-2xl p-10 text-center text-xs font-semibold text-slate-400 border border-slate-200/70">Tidak ada jadwal ' + (isKgb ? 'KGB bulan ini' : 'KP 3 bulan ke depan') + '.</div>';
+        $('kgbKpListContainer').innerHTML = '<div class="bg-white rounded-2xl p-10 text-center text-xs font-semibold text-slate-400 border border-slate-200/70">Tidak ada jadwal ' + (isKgb ? 'KGB dalam 60 hari ke depan' : 'KP 3 bulan ke depan') + '.</div>';
         return;
       }
 
@@ -2144,52 +2157,117 @@
       const st = $('filterArsipStatus').value;
       const q = $('filterArsipSearch').value.trim().toLowerCase();
 
+      const empByNip = Object.create(null);
+      ((state.boot && state.boot.employees) || []).forEach(e => { empByNip[String(e.NIP).toLowerCase()] = e; });
+
       const list = all.filter(a => {
         if (kat && String(a.Kategori_Dokumen || '') !== kat) return false;
         if (st && String(a.Status_Verifikasi || 'Menunggu') !== st) return false;
-        if (q && !(String(a.NIP || '').toLowerCase().includes(q) || String(a.Nama_Berkas || '').toLowerCase().includes(q) || String(a.Kategori_Dokumen || '').toLowerCase().includes(q))) return false;
+        if (q) {
+          const emp = empByNip[String(a.NIP || '').toLowerCase()];
+          const empName = emp ? fullNameOf(emp).toLowerCase() : '';
+          const match = String(a.NIP || '').toLowerCase().includes(q) ||
+            empName.includes(q) ||
+            String(a.Nama_Berkas || '').toLowerCase().includes(q) ||
+            String(a.Kategori_Dokumen || '').toLowerCase().includes(q);
+          if (!match) return false;
+        }
         return true;
       }).slice().reverse();
 
-      $('arsipCountSub').textContent = list.length + ' Berkas Ditampilkan (Total ' + all.length + ' Berkas)';
       const isStaff = state.user && (state.user.role === 'SuperAdmin' || state.user.role === 'Operator');
 
-      if (!list.length) {
-        $('arsipTableBody').innerHTML = '<tr><td colspan="5" class="py-10 text-center text-slate-400 font-semibold">Belum ada berkas arsip sesuai filter.</td></tr>';
+      // Kelompokkan arsip berdasarkan masing-masing pegawai (NIP)
+      const groups = [];
+      const groupMap = Object.create(null);
+      list.forEach(a => {
+        const nipKey = String(a.NIP || 'TANPA_NIP').trim().toLowerCase();
+        if (!groupMap[nipKey]) {
+          const emp = empByNip[nipKey] || null;
+          groupMap[nipKey] = {
+            nipKey: nipKey,
+            nip: String(a.NIP || '-').trim(),
+            emp: emp,
+            nama: emp ? fullNameOf(emp) : 'Pegawai',
+            unit: emp ? (emp.Unit_Kerja || '') : '',
+            files: []
+          };
+          groups.push(groupMap[nipKey]);
+        }
+        groupMap[nipKey].files.push(a);
+      });
+
+      $('arsipCountSub').textContent = list.length + ' Berkas dari ' + groups.length + ' Pegawai (Total ' + all.length + ' Berkas)';
+
+      if (!groups.length) {
+        $('arsipGroupedContainer').innerHTML = '<div class="bg-white rounded-[22px] border border-slate-200/70 py-10 text-center text-xs text-slate-400 font-semibold">Belum ada berkas arsip sesuai filter.</div>';
         return;
       }
 
-      const empByNip = {};
-      ((state.boot && state.boot.employees) || []).forEach(e => { empByNip[String(e.NIP).toLowerCase()] = e; });
+      $('arsipGroupedContainer').innerHTML = groups.map(g => {
+        const isCollapsed = !!state.arsipCollapsed[g.nipKey];
+        const verCount = g.files.filter(f => (f.Status_Verifikasi || 'Menunggu') === 'Terverifikasi').length;
+        const waitCount = g.files.filter(f => (f.Status_Verifikasi || 'Menunggu') === 'Menunggu').length;
+        const canUploadThis = isStaff || (state.user && String(state.user.nip || '').toLowerCase() === g.nipKey);
 
-      $('arsipTableBody').innerHTML = list.map(a => {
-        const emp = empByNip[String(a.NIP || '').toLowerCase()];
-        const ver = a.Status_Verifikasi || 'Menunggu';
-        const verCls = ver === 'Terverifikasi' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (ver === 'Ditolak' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200');
+        const rowsHtml = g.files.map(a => {
+          const ver = a.Status_Verifikasi || 'Menunggu';
+          const verCls = ver === 'Terverifikasi' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (ver === 'Ditolak' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200');
+          return `
+            <tr class="hover:bg-sky-50/25">
+              <td class="py-2.5 px-4">
+                <div class="font-bold text-slate-900">${esc(a.Nama_Berkas || '-')}</div>
+                <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[10px] font-extrabold">${esc(a.Kategori_Dokumen || 'Berkas')}</span>
+              </td>
+              <td class="py-2.5 px-3 font-semibold text-slate-600 code-nip whitespace-nowrap">${esc(a.Tanggal_Unggah || '-')}</td>
+              <td class="py-2.5 px-3 whitespace-nowrap">
+                <span class="inline-flex px-2.5 py-0.5 rounded-full border text-[10px] font-extrabold ${verCls}">${esc(ver)}</span>
+                ${a.Tanggal_Verifikasi ? '<span class="ml-1.5 text-[10px] text-slate-400">' + esc(a.Tanggal_Verifikasi) + '</span>' : ''}
+              </td>
+              <td class="py-2.5 px-4 text-right whitespace-nowrap">
+                <div class="inline-flex gap-1">
+                  <button type="button" data-action="preview-arc" data-id="${esc(a.ID_Dokumen || a.Drive_File_ID)}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[11px]">Lihat</button>
+                  ${isStaff ? '<button type="button" data-action="verify-arc" data-id="' + esc(a.ID_Dokumen) + '" data-status="Terverifikasi" class="px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px]" title="Verifikasi">✓</button>' : ''}
+                  ${isStaff ? '<button type="button" data-action="verify-arc" data-id="' + esc(a.ID_Dokumen) + '" data-status="Ditolak" class="px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-[11px]" title="Tolak">!</button>' : ''}
+                  ${isStaff ? '<button type="button" data-action="delete-arc" data-id="' + esc(a.ID_Dokumen) + '" class="px-2 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold text-[11px]">Hapus</button>' : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
         return `
-          <tr class="hover:bg-sky-50/25">
-            <td class="py-3 px-4">
-              <div class="font-bold text-slate-900">${esc(a.Nama_Berkas || '-')}</div>
-              <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[10px] font-extrabold">${esc(a.Kategori_Dokumen || 'Berkas')}</span>
-            </td>
-            <td class="py-3 px-3">
-              <div class="font-bold text-slate-800">${esc(emp ? fullNameOf(emp) : 'Pegawai')}</div>
-              <div class="text-[11px] text-slate-400 code-nip">NIP: ${esc(a.NIP)}</div>
-            </td>
-            <td class="py-3 px-3 font-semibold text-slate-600 code-nip">${esc(a.Tanggal_Unggah || '-')}</td>
-            <td class="py-3 px-3">
-              <span class="inline-flex px-2.5 py-0.5 rounded-full border text-[10px] font-extrabold ${verCls}">${esc(ver)}</span>
-              ${a.Tanggal_Verifikasi ? '<div class="text-[10px] text-slate-400 mt-0.5">' + esc(a.Tanggal_Verifikasi) + '</div>' : ''}
-            </td>
-            <td class="py-3 px-4 text-right whitespace-nowrap">
-              <div class="inline-flex gap-1">
-                <button type="button" data-action="preview-arc" data-id="${esc(a.ID_Dokumen || a.Drive_File_ID)}" class="px-2.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[11px]">Lihat</button>
-                ${isStaff ? '<button type="button" data-action="verify-arc" data-id="' + esc(a.ID_Dokumen) + '" data-status="Terverifikasi" class="px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px]" title="Verifikasi">✓</button>' : ''}
-                ${isStaff ? '<button type="button" data-action="verify-arc" data-id="' + esc(a.ID_Dokumen) + '" data-status="Ditolak" class="px-2 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-[11px]" title="Tolak">!</button>' : ''}
-                ${isStaff ? '<button type="button" data-action="delete-arc" data-id="' + esc(a.ID_Dokumen) + '" class="px-2 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold text-[11px]">Hapus</button>' : ''}
+          <div class="bg-white rounded-[22px] border border-slate-200/70 shadow-sm overflow-hidden">
+            <div data-toggle-arsip-group="${esc(g.nipKey)}" class="cursor-pointer px-4 py-3.5 bg-slate-50/80 hover:bg-violet-50/40 flex flex-wrap items-center justify-between gap-3 transition">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-9 h-9 rounded-xl ${avatarColor(g.nip)} text-white font-extrabold text-xs flex items-center justify-center shrink-0">${esc(initialsOf(g.nama))}</span>
+                <div class="min-w-0">
+                  <div class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">${esc(g.nama)}</div>
+                  <div class="text-[11px] font-semibold text-slate-500 code-nip truncate">NIP: ${esc(g.nip)}${g.unit ? ' &bull; ' + esc(g.unit) : ''}</div>
+                </div>
               </div>
-            </td>
-          </tr>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="px-2.5 py-1 rounded-full bg-violet-50 text-brand-violetDark text-[10px] font-extrabold">${g.files.length} Berkas</span>
+                ${verCount > 0 ? '<span class="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">' + verCount + ' Terverifikasi</span>' : ''}
+                ${waitCount > 0 ? '<span class="px-2 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold">' + waitCount + ' Menunggu</span>' : ''}
+                ${canUploadThis ? '<button type="button" data-action="upload-for-emp" data-nip="' + esc(g.nip) + '" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-brand-violet text-[11px] font-bold text-brand-violetDark transition">+ Unggah</button>' : ''}
+                <span class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-500 flex items-center justify-center transition-transform ${isCollapsed ? '-rotate-90' : ''}">▾</span>
+              </div>
+            </div>
+            <div class="${isCollapsed ? 'hidden' : ''} border-t border-slate-100 overflow-x-auto">
+              <table class="w-full text-left border-collapse min-w-[640px]">
+                <thead>
+                  <tr class="bg-white border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                    <th class="py-2 px-4">Nama Berkas &amp; Kategori</th>
+                    <th class="py-2 px-3">Tanggal Unggah</th>
+                    <th class="py-2 px-3">Status Verifikasi</th>
+                    <th class="py-2 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-xs">${rowsHtml}</tbody>
+              </table>
+            </div>
+          </div>
         `;
       }).join('');
     }
@@ -2218,14 +2296,16 @@
       }
       $('calStripDays').innerHTML = daysHtml.join('');
 
-      // Priority List (gabungan top 4 dari KGB, KP, STR/SIP)
+      // Priority List (gabungan top 4 dari KGB H-60, KP, STR/SIP)
       const emps = getScopedEmployees();
       const today = todayLocalDMY();
       const tasks = [];
       emps.forEach(e => {
-        const dKgb = parseDMY(e.Jadwal_KGB_Berikutnya);
-        if (dKgb && dKgb.y === today.y && dKgb.m === today.m) {
-          tasks.push({ type: 'KGB', title: 'KGB: ' + fullNameOf(e), sub: e.Jadwal_KGB_Berikutnya, color: 'bg-brand-violet', emp: e });
+        if (isKgbDue(e, today)) {
+          const dKgb = parseDMY(e.Jadwal_KGB_Berikutnya);
+          const diff = dKgb ? diffDaysDMY(dKgb, today) : 0;
+          const ket = diff < 0 ? 'Lewat ' + Math.abs(diff) + ' hr' : (diff === 0 ? 'Hari Ini' : 'H-' + diff);
+          tasks.push({ type: 'KGB', title: 'KGB: ' + fullNameOf(e), sub: e.Jadwal_KGB_Berikutnya + ' (' + ket + ')', color: 'bg-brand-violet', emp: e });
         }
         if (e.Is_STR_SIP_Alert) {
           tasks.push({ type: 'STR', title: 'STR/SIP: ' + fullNameOf(e), sub: e.Status_SIP === 'KEDALUWARSA' || e.Status_STR === 'KEDALUWARSA' ? 'Kedaluwarsa' : 'Mendekati Habis', color: 'bg-brand-emerald', emp: e });
@@ -2554,12 +2634,113 @@
     // ========================================================================
     // 6. DETAIL, WA, ALERT CENTER, ARSIP, EKSPOR EXCEL, PENGATURAN
     // ========================================================================
+    function buildEmployeeChecklistHtml(nip) {
+      const allArc = (state.boot && state.boot.archives) || [];
+      const myArc = allArc.filter(a => String(a.NIP || '').trim().toLowerCase() === String(nip || '').trim().toLowerCase());
+      const byKat = Object.create(null);
+      myArc.forEach(a => {
+        const k = String(a.Kategori_Dokumen || 'Lainnya').trim();
+        if (!byKat[k]) byKat[k] = [];
+        byKat[k].push(a);
+      });
+
+      const isStaff = state.user && (state.user.role === 'SuperAdmin' || state.user.role === 'Operator');
+      const canUpload = isStaff || (state.user && String(state.user.nip || '').toLowerCase() === String(nip || '').toLowerCase());
+
+      const uploadedItems = [];
+      const missingItems = [];
+      CHECKLIST_KATEGORI.forEach(cat => {
+        const files = byKat[cat.key] || [];
+        if (files.length > 0) uploadedItems.push({ cat, files });
+        else missingItems.push(cat);
+      });
+
+      const stdKeys = CHECKLIST_KATEGORI.map(c => c.key);
+      const extraFiles = myArc.filter(a => !stdKeys.includes(String(a.Kategori_Dokumen || '').trim()));
+      const pct = Math.round((uploadedItems.length / CHECKLIST_KATEGORI.length) * 100);
+
+      const html = `
+        <div class="rounded-2xl bg-slate-50/90 border border-violet-200/80 p-4 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h5 class="text-xs font-extrabold text-slate-900">Ceklist Kelengkapan Berkas Pegawai</h5>
+              <p class="text-[11px] font-semibold text-slate-500">${uploadedItems.length} dari ${CHECKLIST_KATEGORI.length} kategori berkas wajib sudah diupload (${pct}%)</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full ${uploadedItems.length === CHECKLIST_KATEGORI.length ? 'bg-emerald-100 text-emerald-700' : 'bg-violet-100 text-brand-violetDark'} text-[11px] font-extrabold">${uploadedItems.length} / ${CHECKLIST_KATEGORI.length} Lengkap</span>
+          </div>
+          <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+            <div class="h-full rounded-full grad-emerald transition-all duration-300" style="width:${pct}%"></div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Sudah Diupload -->
+            <div class="space-y-2">
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">✓ Sudah Diupload (${uploadedItems.length})</div>
+              ${uploadedItems.length ? uploadedItems.map(item => `
+                <div class="rounded-xl bg-white border border-emerald-200/80 p-2.5 space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-extrabold text-emerald-800">${esc(item.cat.label)}</span>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">${item.files.length} file</span>
+                  </div>
+                  ${item.files.map(f => {
+                    const ver = f.Status_Verifikasi || 'Menunggu';
+                    const vCls = ver === 'Terverifikasi' ? 'text-emerald-600' : (ver === 'Ditolak' ? 'text-red-600' : 'text-amber-600');
+                    return `
+                      <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 text-[11px]">
+                        <div class="min-w-0">
+                          <div class="font-semibold text-slate-700 truncate">${esc(f.Nama_Berkas || '-')}</div>
+                          <div class="text-[10px] text-slate-400">${esc(f.Tanggal_Unggah || '-')} &bull; <span class="font-bold ${vCls}">${esc(ver)}</span></div>
+                        </div>
+                        <button type="button" data-action="preview-arc" data-id="${esc(f.ID_Dokumen || f.Drive_File_ID)}" class="shrink-0 px-2 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[10px]">Lihat</button>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `).join('') : '<div class="rounded-xl bg-white border border-slate-200/70 p-3 text-[11px] text-slate-400 font-semibold">Belum ada berkas wajib yang diupload.</div>'}
+            </div>
+
+            <!-- Belum Diupload -->
+            <div class="space-y-2">
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-rose-700">✕ Belum Diupload (${missingItems.length})</div>
+              ${missingItems.length ? missingItems.map(cat => `
+                <div class="rounded-xl bg-white border border-rose-200/70 p-2.5 flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-4 h-4 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center text-[10px] font-extrabold shrink-0">✕</span>
+                    <span class="font-bold text-slate-700 truncate">${esc(cat.label)}</span>
+                  </div>
+                  ${canUpload ? '<button type="button" data-action="upload-for-emp" data-nip="' + esc(nip) + '" data-kat="' + esc(cat.key) + '" class="shrink-0 px-2.5 py-1 rounded-lg bg-violet-50 hover:bg-violet-100 text-brand-violetDark font-bold text-[10px]">+ Unggah</button>' : '<span class="text-[10px] font-semibold text-slate-400">Kosong</span>'}
+                </div>
+              `).join('') : '<div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-[11px] text-emerald-700 font-bold">Seluruh 8 kategori berkas wajib sudah lengkap!</div>'}
+            </div>
+          </div>
+
+          ${extraFiles.length ? `
+            <div class="pt-2 border-t border-slate-200/80 space-y-1.5">
+              <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Berkas Tambahan Lainnya (${extraFiles.length})</div>
+              ${extraFiles.map(f => `
+                <div class="rounded-xl bg-white border border-slate-200/70 p-2 flex items-center justify-between gap-2 text-[11px]">
+                  <span class="font-semibold text-slate-700 truncate">${esc(f.Kategori_Dokumen || 'Lainnya')}: ${esc(f.Nama_Berkas || '-')} (${esc(f.Tanggal_Unggah || '-')})</span>
+                  <button type="button" data-action="preview-arc" data-id="${esc(f.ID_Dokumen || f.Drive_File_ID)}" class="shrink-0 px-2 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-[10px]">Lihat</button>
+                </div>
+              `).join('')}
+            </div>` : ''}
+        </div>
+      `;
+      return { html, doneCount: uploadedItems.length, totalCount: CHECKLIST_KATEGORI.length };
+    }
+
     async function openEmployeeDetail(nip) {
       try {
         const res = await apiPost('getEmployeeDetail', { nip }, { loadingText: 'Memuat detail pegawai...' });
         if (!res.success) { toast(res.message, 'error'); return; }
         const e = res.data;
+        state.detailEmpNip = e.NIP;
         const eduRows = (e.Riwayat_Pendidikan || []);
+        const chk = buildEmployeeChecklistHtml(e.NIP);
+        $('toggleChecklistLabel').textContent = 'Ceklist Berkas (' + chk.doneCount + '/' + chk.totalCount + ')';
+        $('toggleChecklistBtn').classList.remove('bg-brand-violet', 'text-white');
+        $('toggleChecklistBtn').classList.add('bg-violet-50', 'text-brand-violetDark');
+
         const row = (k, v) => '<div class="flex justify-between gap-4 py-1.5 border-b border-slate-100"><span class="text-slate-500 font-semibold">' + k + '</span><span class="font-bold text-slate-800 text-right">' + esc(v || '-') + '</span></div>';
 
         $('detailModalBody').innerHTML = `
@@ -2571,6 +2752,8 @@
               <p class="text-xs font-semibold text-brand-violetDark">${esc(e.Nama_Jabatan || '-')} — ${esc(e.Unit_Kerja || '-')}</p>
             </div>
           </div>
+
+          <div id="detailChecklistPanel" class="hidden no-print">${chk.html}</div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
@@ -2635,11 +2818,11 @@
     function renderAlertCenterModal() {
       const emps = getScopedEmployees();
       const today = todayLocalDMY();
-      const kgb = emps.filter(e => { const d = parseDMY(e.Jadwal_KGB_Berikutnya); return d && d.y === today.y && d.m === today.m; });
+      const kgb = emps.filter(e => isKgbDue(e, today));
       const kp = emps.filter(e => { const d = parseDMY(e.Jadwal_KP_Berikutnya); if (!d) return false; const df = diffDaysDMY(d, today); return df >= -7 && df <= 95; });
       const str = emps.filter(e => e.Is_STR_SIP_Alert);
 
-      const tabs = { kgb: ['KGB Bulan Ini', kgb], kp: ['KP 3 Bulan Depan', kp], str: ['STR/SIP Perlu Aksi', str] };
+      const tabs = { kgb: ['KGB H-60', kgb], kp: ['KP 3 Bulan Depan', kp], str: ['STR/SIP Perlu Aksi', str] };
       document.querySelectorAll('.am-tab-btn').forEach(btn => {
         const k = btn.dataset.amTab;
         const active = k === state.alertTab;
@@ -2659,9 +2842,16 @@
 
       $('alertModalList').innerHTML = list.map(e => {
         let infoBadge = '';
-        if (state.alertTab === 'kgb') infoBadge = '<span class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold">KGB: ' + esc(e.Jadwal_KGB_Berikutnya) + '</span>';
-        else if (state.alertTab === 'kp') infoBadge = '<span class="px-2.5 py-0.5 rounded-full bg-fuchsia-50 border border-fuchsia-200 text-fuchsia-800 text-[10px] font-bold">KP: ' + esc(e.Jadwal_KP_Berikutnya) + '</span>';
-        else infoBadge = strSipStatusBadge(e.Status_STR, e.Sisa_Hari_STR, 'STR') + ' ' + strSipStatusBadge(e.Status_SIP, e.Sisa_Hari_SIP, 'SIP');
+        if (state.alertTab === 'kgb') {
+          const p = parseDMY(e.Jadwal_KGB_Berikutnya);
+          const df = p ? diffDaysDMY(p, today) : 0;
+          const ket = df < 0 ? 'Lewat ' + Math.abs(df) + ' hr' : (df === 0 ? 'Hari Ini' : 'Sisa ' + df + ' hr');
+          infoBadge = '<span class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold">KGB: ' + esc(e.Jadwal_KGB_Berikutnya) + ' (' + ket + ')</span>';
+        } else if (state.alertTab === 'kp') {
+          infoBadge = '<span class="px-2.5 py-0.5 rounded-full bg-fuchsia-50 border border-fuchsia-200 text-fuchsia-800 text-[10px] font-bold">KP: ' + esc(e.Jadwal_KP_Berikutnya) + '</span>';
+        } else {
+          infoBadge = strSipStatusBadge(e.Status_STR, e.Sisa_Hari_STR, 'STR') + ' ' + strSipStatusBadge(e.Status_SIP, e.Sisa_Hari_SIP, 'SIP');
+        }
 
         return `
           <div class="rounded-2xl border border-slate-200/80 p-3.5 flex flex-wrap items-center justify-between gap-3">
@@ -2687,7 +2877,10 @@
 
       let msg = 'Yth. ' + nama + ',\n';
       if (type === 'KGB') {
-        msg += 'Mengingatkan jadwal Kenaikan Gaji Berkala (KGB) Anda pada tanggal ' + (emp.Jadwal_KGB_Berikutnya || '-') + '. Mohon menyiapkan berkas usulan ke Subbag Kepegawaian RSUD Nene Mallomo.\nTerima kasih.';
+        const pKgb = parseDMY(emp.Jadwal_KGB_Berikutnya);
+        const diffKgb = pKgb ? diffDaysDMY(pKgb, todayLocalDMY()) : null;
+        const sisaKet = diffKgb === null ? '' : (diffKgb > 0 ? ' (dalam ' + diffKgb + ' hari lagi)' : (diffKgb === 0 ? ' (hari ini)' : ' (terlewat ' + Math.abs(diffKgb) + ' hari)'));
+        msg += 'Mengingatkan jadwal Kenaikan Gaji Berkala (KGB) Anda pada tanggal ' + (emp.Jadwal_KGB_Berikutnya || '-') + sisaKet + '. Sesuai masa persiapan H-60 sebelum berkala, mohon menyiapkan berkas usulan ke Subbag Kepegawaian RSUD Nene Mallomo.\nTerima kasih.';
       } else if (type === 'KP') {
         msg += 'Mengingatkan jadwal proyeksi Kenaikan Pangkat (KP) Anda pada tanggal ' + (emp.Jadwal_KP_Berikutnya || '-') + '. Mohon melengkapi berkas usulan KP ke Subbag Kepegawaian RSUD Nene Mallomo.\nTerima kasih.';
       } else if (type === 'STR') {
@@ -2699,7 +2892,7 @@
       openModal('waModal');
     }
 
-    function openUploadArchiveModal(preselectNip) {
+    function openUploadArchiveModal(preselectNip, preselectKategori) {
       const emps = (state.boot && state.boot.employees) || [];
       $('uploadArchiveForm').reset();
       $('upFileInfo').textContent = 'Berkas disimpan di folder Google Drive Privat RSUD Nene Mallomo.';
@@ -2708,6 +2901,7 @@
       ).join('');
       if (preselectNip) $('upNipSelect').value = preselectNip;
       else if (state.user && state.user.role === 'Pegawai') $('upNipSelect').value = state.user.nip;
+      if (preselectKategori) $('upKategori').value = preselectKategori;
       openModal('uploadArchiveModal');
     }
 
@@ -2989,13 +3183,13 @@
         const isKgb = state.kgbTab === 'kgb';
         const today = todayLocalDMY();
         const rows = getScopedEmployees().filter(e => {
-          const d = parseDMY(isKgb ? e.Jadwal_KGB_Berikutnya : e.Jadwal_KP_Berikutnya);
+          if (isKgb) return isKgbDue(e, today);
+          const d = parseDMY(e.Jadwal_KP_Berikutnya);
           if (!d) return false;
-          if (isKgb) return d.y === today.y && d.m === today.m;
           const df = diffDaysDMY(d, today);
           return df >= -7 && df <= 95;
         }).map(e => [e.NIP, fullNameOf(e), e.Status_Kepegawaian, e.Golongan_Pangkat_Terakhir, e.Unit_Kerja, isKgb ? e.Jadwal_KGB_Berikutnya : e.Jadwal_KP_Berikutnya, e.No_HP_WA]);
-        exportCsvExcel((isKgb ? 'Rekap_KGB_' : 'Rekap_KP_') + formatDMY(today).replace(/\//g, '-') + '.csv',
+        exportCsvExcel((isKgb ? 'Rekap_KGB_H60_' : 'Rekap_KP_') + formatDMY(today).replace(/\//g, '-') + '.csv',
           ['NIP', 'Nama', 'Status', 'Golongan', 'Unit Kerja', isKgb ? 'Jadwal KGB' : 'Jadwal KP', 'No WA'], rows);
       };
 
@@ -3050,6 +3244,14 @@
           closeModal('uploadArchiveModal');
           toast(res.message, 'success');
           await loadBootData(false);
+          if (!$('detailModal').classList.contains('hidden') && state.detailEmpNip) {
+            const panel = $('detailChecklistPanel');
+            if (panel) {
+              const chk = buildEmployeeChecklistHtml(state.detailEmpNip);
+              panel.innerHTML = chk.html;
+              $('toggleChecklistLabel').textContent = 'Ceklist Berkas (' + chk.doneCount + '/' + chk.totalCount + ')';
+            }
+          }
         } catch (err) { toast(err.message, 'error'); }
       };
 
@@ -3176,6 +3378,33 @@
         navigator.clipboard.writeText(txt).then(() => toast('Kredensial disalin ke clipboard.', 'success'));
       };
 
+      // Toggle Ceklist Berkas pada Modal Profil Pegawai
+      $('toggleChecklistBtn').onclick = () => {
+        const panel = $('detailChecklistPanel');
+        if (!panel) return;
+        const willShow = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', !willShow);
+        $('toggleChecklistBtn').classList.toggle('bg-brand-violet', willShow);
+        $('toggleChecklistBtn').classList.toggle('text-white', willShow);
+        $('toggleChecklistBtn').classList.toggle('bg-violet-50', !willShow);
+        $('toggleChecklistBtn').classList.toggle('text-brand-violetDark', !willShow);
+        if (willShow) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
+      // Buka / Tutup Semua Folder Arsip per Pegawai
+      $('arsipExpandAllBtn').onclick = () => {
+        state.arsipCollapsed = Object.create(null);
+        renderArsipView();
+      };
+      $('arsipCollapseAllBtn').onclick = () => {
+        const all = (state.boot && state.boot.archives) || [];
+        all.forEach(a => {
+          const k = String(a.NIP || 'TANPA_NIP').trim().toLowerCase();
+          state.arsipCollapsed[k] = true;
+        });
+        renderArsipView();
+      };
+
       // GLOBAL EVENT DELEGATION (100% XSS-Safe & Kebal Tanda Petik pada Nama!)
       document.addEventListener('click', async ev => {
         const navBtn = ev.target.closest('[data-nav]');
@@ -3214,7 +3443,15 @@
         if (pageBtn && !pageBtn.disabled) { state.empPage = +pageBtn.dataset.empPage; renderPegawaiTable(); return; }
 
         const actBtn = ev.target.closest('[data-action]');
-        if (!actBtn) return;
+        if (!actBtn) {
+          const grpToggle = ev.target.closest('[data-toggle-arsip-group]');
+          if (grpToggle) {
+            const k = grpToggle.dataset.toggleArsipGroup;
+            state.arsipCollapsed[k] = !state.arsipCollapsed[k];
+            renderArsipView();
+          }
+          return;
+        }
         const action = actBtn.dataset.action;
         const nip = actBtn.dataset.nip || '';
         const id = actBtn.dataset.id || '';
@@ -3223,6 +3460,8 @@
 
         if (action === 'detail-emp' && nip) {
           openEmployeeDetail(nip);
+        } else if (action === 'upload-for-emp' && nip) {
+          openUploadArchiveModal(nip, actBtn.dataset.kat || '');
         } else if (action === 'edit-emp' && emp) {
           openEmployeeModal(emp, 0);
         } else if (action === 'edit-emp-kred' && emp) {
